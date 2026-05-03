@@ -1,0 +1,90 @@
+{
+  "_comment": "Copy this file to sources.json and replace placeholder URLs with your Google Alert RSS feed URLs.",
+
+  "feeds": [
+    {
+      "_comment": "COMPETITOR FEEDS — create Google Alerts for each firm + topic, set delivery to RSS feed",
+      "source": "Firm1_AI",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "source": "Firm1_GBS",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "source": "Firm2_AI",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "_comment": "CLIENT FEEDS — track target companies for transformation signals",
+      "source": "Client1_Finance",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "source": "Client1_GBS",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    }
+  ],
+
+  "competitor_sources": ["Firm1", "Firm2"],
+
+  "client_sources": ["Client1"],
+
+  "firm_clusters": {
+    "MBB": ["McKinsey", "BCG", "Bain"],
+    "Big4": ["Deloitte", "EY", "KPMG", "PwC"],
+    "Accenture": ["Accenture"]
+  },
+
+  "blocked_domains": [
+    "gurufocus.com",
+    "marketbeat.com",
+    "etf.com",
+    "etfdb.com",
+    "macrotrends.net",
+    "simplywall.st",
+    "stockanalysis.com",
+    "investing.com",
+    "seekingalpha.com",
+    "zacks.com",
+    "fool.com",
+    "motleyfool.com",
+    "benzinga.com",
+    "globenewswire.com",
+    "prnewswire.com",
+    "businesswire.com",
+    "marketwatch.com",
+    "thestreet.com"
+  ],
+
+  "tag_rules": {
+    "GBS": [
+      "gbs", "global business services", "shared services",
+      "shared service center", "shared service centre", "ssc",
+      "service delivery", "delivery model", "operating model",
+      "target operating model", "global delivery model",
+      "business process services", "bpo"
+    ],
+    "GCC": [
+      "global capability center", "global capability centre",
+      "gcc", "global in-house center", "gic",
+      "captive center", "delivery center", "delivery centre"
+    ],
+    "Agentic_AI": [
+      "agentic ai", "agentic", "ai agent", "ai agents",
+      "autonomous agent", "multi-agent", "agentic workflow",
+      "agent orchestration", "autonomous workflow"
+    ],
+    "Operating_Model": [
+      "operating model", "target operating model", "tom",
+      "delivery model", "global delivery model", "service delivery model"
+    ],
+    "Client_Signal": [
+      "finance transformation", "record to report", "r2r",
+      "acquire to retire", "a2r", "asset accounting", "ifrs",
+      "treasury", "cfo", "finance function", "shared services",
+      "restructuring", "digital transformation", "erp", "sap",
+      "strategic review"
+    ]
+  }
+}

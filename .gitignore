@@ -1,0 +1,38 @@
+# Database
+*.db
+*.db-wal
+*.db-shm
+
+# API keys / secrets
+.env
+.env.*
+
+# Output (generated files)
+output/
+
+# Logs
+logs/
+
+# Personal assets
+moritz.jpg
+*.jpg
+*.jpeg
+*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+.venv/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# VS Code
+.vscode/
+
+# Edition counter (local state)
+edition.txt
