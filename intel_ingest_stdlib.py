@@ -1,4 +1,4 @@
-# intel_ingest_stdlib.py — Mac M4 compatible (TLCA v3)
+# intel_ingest_stdlib.py — Mac M4 compatible (TLCA v4)
 from __future__ import annotations
 
 import hashlib
@@ -20,12 +20,13 @@ SOURCES_PATH = os.getenv("INTEL_SOURCES_PATH", "sources.json")
 VERIFY_SSL = os.getenv("INTEL_VERIFY_SSL", "1").strip() not in ("0", "false", "False")
 ALLOW_INSECURE_SSL_FALLBACK = os.getenv("ALLOW_INSECURE_SSL_FALLBACK", "1") == "1"
 HTTP_TIMEOUT = int(os.getenv("INTEL_HTTP_TIMEOUT", "25"))
+FAIL_ON_FEED_ERROR = os.getenv("INTEL_FAIL_ON_FEED_ERROR", "1").strip().lower() not in ("0", "false")
 
 DEDUP_ON_CANONICAL = os.getenv("INTEL_DEDUP_ON_CANONICAL", "1").strip() not in ("0", "false", "False")
 
 ALLOWED_TAGS = [
     t.strip()
-    for t in os.getenv("INTEL_ALLOWED_TAGS", "GBS,GCC,Agentic_AI,Operating_Model,Client_Signal").split(",")
+    for t in os.getenv("INTEL_ALLOWED_TAGS", "GBS,GCC,Agentic_AI,Operating_Model,Client_Signal,Analyst_Research").split(",")
     if t.strip()
 ]
 REQUIRE_TAG_MATCH = os.getenv("INTEL_REQUIRE_TAG_MATCH", "1").strip() not in ("0", "false", "False")
@@ -73,6 +74,9 @@ def clean_html(text: str) -> str:
 
 
 def unwrap_google_redirect(url: str) -> str:
+    # Google News RSS article links — keep as-is
+    if "news.google.com/rss/articles/" in (url or ""):
+        return (url or "").strip()
     try:
         u = urlparse(url or "")
         if "google." in (u.netloc or "") and u.path == "/url":
@@ -168,7 +172,7 @@ def ensure_schema(con: sqlite3.Connection) -> None:
         """
     )
     _add_col_if_missing(cur, "articles", "clean_url", "TEXT")
-    _add_col_if_missing(cur, "articles", "feed_type", "TEXT")  # 'competitor' or 'client'
+    _add_col_if_missing(cur, "articles", "feed_type", "TEXT")
 
     cur.execute(
         """
@@ -189,13 +193,27 @@ def ensure_schema(con: sqlite3.Connection) -> None:
     con.commit()
 
 
-def load_sources() -> tuple[list[FeedSource], dict[str, list[str]], list[str]]:
+def load_sources() -> tuple[list[FeedSource], dict[str, list[str]], list[str], list[str], list[str]]:
     with open(SOURCES_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
-    feeds = [FeedSource(**x) for x in cfg.get("feeds", [])]
+    feeds = []
+    for item in cfg.get("feeds", []):
+        if not isinstance(item, dict) or not item.get("source") or not item.get("url"):
+            raise ValueError("Each feed must include non-empty 'source' and 'url' fields")
+        feeds.append(FeedSource(source=str(item["source"]).strip(), url=str(item["url"]).strip()))
     tag_rules = cfg.get("tag_rules", {})
     competitor_sources = cfg.get("competitor_sources", [])
-    return feeds, tag_rules, competitor_sources
+    analyst_sources = cfg.get("analyst_sources", [])
+    blocked_domains = cfg.get("blocked_domains", [])
+    return feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains
+
+
+def is_blocked_domain(url: str, blocked_domains: list[str]) -> bool:
+    try:
+        host = urlparse(url).netloc.lower().lstrip('www.')
+        return any(host == d or host.endswith('.' + d) for d in blocked_domains)
+    except Exception:
+        return False
 
 
 def infer_tags(text: str, tag_rules: dict[str, list[str]]) -> list[str]:
@@ -221,19 +239,20 @@ def is_excluded(title: str, url: str) -> bool:
     return False
 
 
-def get_feed_type(source: str, competitor_sources: list[str]) -> str:
-    """Classify feed as 'competitor' or 'client' based on source name prefix."""
+def get_feed_type(source: str, competitor_sources: list[str], analyst_sources: list[str]) -> str:
     for comp in competitor_sources:
         if source.startswith(comp):
             return "competitor"
+    for analyst in analyst_sources:
+        if source.startswith(analyst):
+            return "analyst"
     return "client"
 
 
 def fetch_feed_xml(url: str) -> str:
     headers = {
-        # Mac-friendly user agent
-        "User-Agent": "competitor-intel/1.0 (+macOS; requests)",
-        "Accept": "application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
     }
 
     def _do(verify: bool) -> str:
@@ -253,15 +272,31 @@ def parse_atom(xml_text: str) -> list[dict]:
     root = ET.fromstring(xml_text)
     ns = {"atom": "http://www.w3.org/2005/Atom"}
     entries = []
+
+    # Atom format (Google Alerts)
     for e in root.findall("atom:entry", ns):
         title = (e.findtext("atom:title", default="", namespaces=ns) or "").strip()
         published = (e.findtext("atom:published", default="", namespaces=ns) or "").strip()
-        summary = (e.findtext("atom:content", default="", namespaces=ns) or "").strip()
+        summary = (
+            e.findtext("atom:content", default="", namespaces=ns)
+            or e.findtext("atom:summary", default="", namespaces=ns)
+            or ""
+        ).strip()
         link = ""
         link_el = e.find("atom:link", ns)
         if link_el is not None:
             link = (link_el.attrib.get("href", "") or "").strip()
         entries.append({"title": title, "link": link, "published": published, "summary": summary})
+
+    # RSS format (Google News)
+    if not entries:
+        for item in root.findall(".//item"):
+            title = (item.findtext("title") or "").strip()
+            link = (item.findtext("link") or "").strip()
+            published = (item.findtext("pubDate") or "").strip()
+            summary = (item.findtext("description") or "").strip()
+            entries.append({"title": title, "link": link, "published": published, "summary": summary})
+
     return entries
 
 
@@ -330,7 +365,7 @@ def upsert_article(
 
 
 def main() -> int:
-    feeds, tag_rules, competitor_sources = load_sources()
+    feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains = load_sources()
 
     con = connect_db()
     try:
@@ -340,13 +375,14 @@ def main() -> int:
         total_entries = 0
         skipped_excluded = 0
         skipped_notag = 0
+        failed_feeds: list[str] = []
 
         for feed in feeds:
             try:
                 xml_text = fetch_feed_xml(feed.url)
                 entries = parse_atom(xml_text)
                 total_entries += len(entries)
-                feed_type = get_feed_type(feed.source, competitor_sources)
+                feed_type = get_feed_type(feed.source, competitor_sources, analyst_sources)
 
                 for ent in entries:
                     title = clean_html(ent.get("title", ""))
@@ -359,7 +395,15 @@ def main() -> int:
                         skipped_excluded += 1
                         continue
 
+                    if is_blocked_domain(link, blocked_domains):
+                        skipped_excluded += 1
+                        continue
+
                     tags = infer_tags(f"{title} {snippet}", tag_rules)
+
+                    # Auto-tag analyst articles that don't match any keyword rule
+                    if not tags and feed_type == "analyst":
+                        tags = ["Analyst_Research"]
 
                     if REQUIRE_TAG_MATCH and not tags:
                         skipped_notag += 1
@@ -369,6 +413,7 @@ def main() -> int:
                         new_count += 1
 
             except Exception as ex:
+                failed_feeds.append(feed.source)
                 print(f"[WARN] Feed failed ({feed.source}): {ex}")
 
         print(
@@ -376,6 +421,10 @@ def main() -> int:
             f"skipped excluded: {skipped_excluded} | skipped no-tag: {skipped_notag} | "
             f"allowed_tags: {ALLOWED_TAGS}"
         )
+        if failed_feeds:
+            print(f"[WARN] Failed feeds ({len(failed_feeds)}): {', '.join(failed_feeds)}")
+            if FAIL_ON_FEED_ERROR:
+                return 1
         return 0
     finally:
         con.close()

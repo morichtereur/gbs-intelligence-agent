@@ -81,6 +81,8 @@ export INTEL_RECIPIENTS="recipient@email.com"
 
 Add to `~/.zshrc` or `~/.bashrc` for persistence.
 
+The weekly runner stops on any failed pipeline stage or feed fetch, so it will not send a partial newsletter. The edition counter is committed only after the email is sent successfully. Set `INTEL_FAIL_ON_FEED_ERROR=0` only when a partial run is acceptable.
+
 ### 3. Configure feeds
 ```bash
 cp sources.example.json sources.json
@@ -151,6 +153,8 @@ export INTEL_PHOTO_PATH="photo.jpg"
 | `GMAIL_APP_PASSWORD` | — | Gmail App Password |
 | `INTEL_RECIPIENTS` | `recipient@email.com` | Comma-separated recipients |
 | `INTEL_DB_PATH` | `intel.db` | SQLite database |
+| `INTEL_SOURCES_PATH` | `sources.json` | Feed and tagging configuration |
+| `INTEL_FAIL_ON_FEED_ERROR` | `1` | Stop before delivery when a feed fails |
 | `INTEL_WINDOW_DAYS` | `7` | Newsletter lookback window |
 | `INTEL_MIN_SCORE` | `3` | Minimum relevance score for newsletter |
 | `INTEL_MAX_SUMMARIZE` | `30` | Max articles to summarize per run |

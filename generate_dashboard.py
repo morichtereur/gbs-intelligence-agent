@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 DB_PATH = os.getenv("INTEL_DB_PATH", "intel.db")
+SOURCES_PATH = os.getenv("INTEL_SOURCES_PATH", "sources.json")
 OUT_DIR = Path(os.getenv("INTEL_OUT_DIR", "output"))
 WINDOW_WEEKS = int(os.getenv("INTEL_DASHBOARD_WEEKS", "4"))
 
@@ -41,7 +42,7 @@ def fetch_all_signals() -> list[dict]:
 
     # Load firm clusters from sources.json
     try:
-        with open("sources.json") as cf:
+        with open(SOURCES_PATH, encoding="utf-8") as cf:
             scfg = json.load(cf)
         firm_clusters = scfg.get("firm_clusters", {})
         company_to_cluster = {}
@@ -101,7 +102,8 @@ def embed_photo() -> str:
 
 
 def build_html(signals: list[dict]) -> str:
-    signals_json = json.dumps(signals, ensure_ascii=False)
+    # Prevent article content from closing the inline script tag.
+    signals_json = json.dumps(signals, ensure_ascii=False).replace("<", "\\u003c")
     all_tags = sorted(set(t for s in signals for t in s["tags"]))
     all_weeks = sorted(set(s["week_label"] for s in signals), reverse=True)
     now = datetime.now(timezone.utc).strftime("%d %B %Y")

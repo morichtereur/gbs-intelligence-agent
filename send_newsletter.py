@@ -12,9 +12,9 @@ from email import encoders
 from pathlib import Path
 
 # --- Config ---
-GMAIL_USER = os.getenv("GMAIL_USER", "your-gmail@gmail.com")
+GMAIL_USER = os.getenv("GMAIL_USER", "").strip()
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD", "").strip()
-RECIPIENTS = os.getenv("INTEL_RECIPIENTS", "your-recipient@email.com").split(",")
+RECIPIENTS = [address.strip() for address in os.getenv("INTEL_RECIPIENTS", "").split(",") if address.strip()]
 
 OUT_DIR = Path(os.getenv("INTEL_OUT_DIR", "output"))
 EDITION = os.getenv("INTEL_EDITION", "1")
@@ -34,8 +34,16 @@ def get_newsletter_html() -> str | None:
 
 
 def send_newsletter() -> bool:
+    if not GMAIL_USER or "@" not in GMAIL_USER:
+        print("[ERROR] GMAIL_USER must be a valid email address.")
+        return False
+
     if not GMAIL_APP_PASSWORD:
         print("[ERROR] GMAIL_APP_PASSWORD not set. Export it and retry.")
+        return False
+
+    if not RECIPIENTS:
+        print("[ERROR] INTEL_RECIPIENTS must contain at least one email address.")
         return False
 
     html = get_newsletter_html()

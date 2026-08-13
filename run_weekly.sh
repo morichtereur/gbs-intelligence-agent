@@ -36,11 +36,8 @@ set_env_default() {
 run_step() {
   local label="$1"; local script="$2"
   echo ""; echo "==> $label"
-  if python3 "$script"; then
-    echo "[OK] $label"
-  else
-    echo "[WARN] $label exited with error (continuing)"
-  fi
+  python3 "$script"
+  echo "[OK] $label"
 }
 
 # ---------- env defaults ----------
@@ -80,7 +77,18 @@ fi
 # ---------- pipeline ----------
 mkdir -p output logs
 
-EDITION=$(python3 edition_counter.py)
+if [[ ! -f "$INTEL_SOURCES_PATH" ]]; then
+  echo "[ERROR] Sources file not found: $INTEL_SOURCES_PATH"
+  echo "        Copy sources.example.json to sources.json and configure it."
+  exit 1
+fi
+
+if [[ ! -f "$INTEL_TEMPLATE_PATH" ]]; then
+  echo "[ERROR] Newsletter template not found: $INTEL_TEMPLATE_PATH"
+  exit 1
+fi
+
+EDITION=$(python3 edition_counter.py --peek)
 export INTEL_EDITION="$EDITION"
 echo "[info] Edition: $EDITION"
 
@@ -92,6 +100,9 @@ run_step "2/5 Summarize new links"  "summarize_new_links.py"
 run_step "3/5 Write newsletter"     "weekly_newsletter_output.py"
 run_step "4/5 Build explorer"       "generate_dashboard.py"
 run_step "5/5 Send newsletter"      "send_newsletter.py"
+
+python3 edition_counter.py --commit "$EDITION"
+echo "[OK] Edition $EDITION committed"
 
 echo ""
 echo "=================================================="
