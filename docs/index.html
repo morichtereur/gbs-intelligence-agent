@@ -52,7 +52,7 @@
     .brand {
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--ink);
     }
     .masthead-meta {
       font-size: 12.5px;
@@ -61,11 +61,11 @@
     .demo-chip {
       display: inline-block;
       font-size: 11px;
-      font-weight: 600;
-      color: var(--paper);
-      background: var(--accent);
-      padding: 1px 8px;
-      border-radius: 3px;
+      font-weight: 500;
+      color: var(--ink-2);
+      border: 1px solid var(--rule);
+      padding: 0 7px;
+      border-radius: 2px;
       margin-left: 8px;
       vertical-align: 1px;
     }
@@ -146,11 +146,11 @@
 
     /* ── Filters ── */
     .filters {
-      padding: 20px 52px 16px;
+      padding: 14px 52px 0;
       display: flex;
-      gap: 10px;
+      gap: 0 22px;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: baseline;
       border-bottom: 1px solid var(--rule);
       position: sticky;
       top: 0;
@@ -160,48 +160,43 @@
     .pill {
       font-family: var(--sans);
       font-size: 13.5px;
-      padding: 6px 14px;
-      border: 1px solid var(--rule);
-      border-radius: 17px;
-      background: var(--paper);
-      color: var(--ink-2);
+      padding: 6px 1px 11px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: var(--ink-3);
       cursor: pointer;
     }
-    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill:hover { color: var(--ink); }
     .pill.active {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: var(--paper);
+      color: var(--ink);
+      font-weight: 600;
+      border-bottom-color: var(--ink);
     }
-    .filter-sep { width: 1px; height: 22px; background: var(--rule); margin: 0 4px; }
     .search-input {
-      flex: 1;
-      min-width: 180px;
+      margin-left: auto;
+      flex: 0 1 200px;
+      min-width: 140px;
       font-family: var(--sans);
       font-size: 13.5px;
-      padding: 6px 14px;
-      border: 1px solid var(--rule);
-      border-radius: 17px;
+      padding: 6px 1px 10px;
+      border: none;
+      border-bottom: 1px solid var(--rule);
       color: var(--ink);
-      background: var(--paper);
+      background: none;
       outline: none;
     }
-    .search-input:focus { border-color: var(--accent); }
+    .search-input:focus { border-bottom-color: var(--ink); }
 
     /* ── Register ── */
     .register { padding: 4px 52px 44px; }
 
-    .section-label {
-      font-size: 13px;
-      font-weight: 600;
-      padding: 26px 0 8px;
+    .list-head {
+      font-size: 12.5px;
+      color: var(--ink-3);
+      padding: 22px 0 8px;
       border-bottom: 1px solid var(--ink);
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
     }
-    .section-label .count { color: var(--ink-3); font-weight: 400; }
-    .sec-comp { color: var(--ink); }
 
     .row {
       padding: 16px 0 18px;
@@ -213,7 +208,7 @@
       margin-bottom: 3px;
     }
     .row-meta .firm { color: var(--ink-2); font-weight: 600; }
-    .row-meta .star { color: var(--accent); font-weight: 600; }
+    .row-meta .star { color: var(--accent); }
     .row-title {
       display: inline-block;
       font-family: var(--serif);
@@ -224,7 +219,6 @@
       text-decoration: none;
     }
     .row-title:hover { color: var(--accent); text-decoration: underline; }
-    .row-title .arrow { font-family: var(--sans); font-size: 13px; color: var(--accent); }
     .row-sum {
       margin-top: 5px;
       font-size: 14px;
@@ -320,7 +314,7 @@
 </div>
 
 <script>
-const SIGNALS = [{"source": "Accenture_AI", "company": "Accenture", "topic": "AI", "title": "Accenture reports rapid growth in agentic AI bookings for operations", "url": "https://example.com/demo/accenture-agentic-bookings", "tags": ["Agentic_AI", "GBS"], "feed_type": "competitor", "created_at": "2026-08-31T10:45:58+00:00", "cw": "CW 36", "summary": "Earnings-adjacent communication highlighting strong bookings for agent-based operations transformation. Confirms competitor traction in AI-led delivery at scale.", "score": 3, "cluster": "Accenture"}, {"source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "How agentic AI is rewriting the GBS playbook", "url": "https://example.com/demo/mckinsey-agentic-gbs", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-30T10:45:58+00:00", "cw": "CW 35", "summary": "Argues that autonomous agents shift GBS from labor arbitrage toward outcome-based delivery models. Outlines a maturity path from task automation to end-to-end process ownership and names talent redeployment as the binding constraint.", "score": 3, "cluster": "MBB"}, {"source": "Deloitte_GBS", "company": "Deloitte", "topic": "GBS", "title": "Deloitte launches agentic AI suite for shared services operations", "url": "https://example.com/demo/deloitte-agentic-suite", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-29T10:45:58+00:00", "cw": "CW 35", "summary": "Product announcement: a packaged set of AI agents for invoice processing, journal preparation, and service desk triage aimed at GBS organisations. Signals a productised competitor offering in core finance operations.", "score": 3, "cluster": "Big4"}, {"source": "BCG_GCC", "company": "BCG", "topic": "GCC", "title": "GCCs as innovation engines: five moves for the next 24 months", "url": "https://example.com/demo/bcg-gcc-innovation", "tags": ["GCC", "GBS"], "feed_type": "competitor", "created_at": "2026-08-28T10:45:58+00:00", "cw": "CW 35", "summary": "Argues capability centers should take product ownership rather than ticket queues. Five recommended moves include embedding AI engineering pods and rotating global process owners into the center.", "score": 3, "cluster": "MBB"}, {"source": "EY_GBS", "company": "EY", "topic": "GBS", "title": "EY announces finance transformation alliance targeting GBS clients", "url": "https://example.com/demo/ey-gbs-alliance", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-27T10:45:58+00:00", "cw": "CW 35", "summary": "Alliance announcement combining a major ERP vendor's platform with EY's GBS advisory practice. A direct go-to-market signal in the finance transformation space.", "score": 3, "cluster": "Big4"}, {"source": "PwC_AI", "company": "PwC", "topic": "AI", "title": "PwC embeds AI agents across managed services delivery", "url": "https://example.com/demo/pwc-managed-services-agents", "tags": ["Agentic_AI", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-25T10:45:58+00:00", "cw": "CW 35", "summary": "Announces agent-augmented delivery across PwC's managed services contracts, with stated productivity gains reinvested into pricing. A structural signal for outsourcing economics.", "score": 3, "cluster": "Big4"}, {"source": "Bain_OM", "company": "Bain", "topic": "OM", "title": "Operating model design in the age of autonomous workflows", "url": "https://example.com/demo/bain-autonomous-workflows", "tags": ["Operating_Model", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-26T10:45:58+00:00", "cw": "CW 35", "summary": "Framework piece on how autonomous workflows change spans, layers, and the role of middle management in service delivery organisations.", "score": 2, "cluster": "MBB"}, {"source": "McKinsey_AI", "company": "McKinsey", "topic": "AI", "title": "The state of AI agents in the enterprise: adoption outpaces governance", "url": "https://example.com/demo/mckinsey-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-23T10:45:58+00:00", "cw": "CW 34", "summary": "Survey-style piece finding that agent pilots are spreading faster than the control frameworks around them. Recommends pairing every deployment with a defined process owner and audit trail before scaling.", "score": 2, "cluster": "MBB"}, {"source": "Accenture_GBS", "company": "Accenture", "topic": "GBS", "title": "Reinventing global delivery: composite teams of people and agents", "url": "https://example.com/demo/accenture-composite-teams", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-22T10:45:58+00:00", "cw": "CW 34", "summary": "Describes a delivery model where human process experts supervise fleets of task agents. Positions the model as the successor to pyramid-based offshore delivery.", "score": 2, "cluster": "Accenture"}, {"source": "BCG_AI", "company": "BCG", "topic": "AI", "title": "Agentic AI pilots stall without process redesign, BCG survey finds", "url": "https://example.com/demo/bcg-agent-pilots", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-21T10:45:58+00:00", "cw": "CW 34", "summary": "Reports that a majority of surveyed agent pilots fail to scale because the surrounding process was left unchanged. Advocates redesigning the end-to-end flow before automating individual steps.", "score": 2, "cluster": "MBB"}, {"source": "KPMG_GBS", "company": "KPMG", "topic": "GBS", "title": "Benchmarking the modern SSC: throughput, quality, experience", "url": "https://example.com/demo/kpmg-ssc-benchmark", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-20T10:45:58+00:00", "cw": "CW 34", "summary": "Benchmark methodology update adding employee and customer experience metrics to classic cost and productivity measures for shared service centers.", "score": 2, "cluster": "Big4"}, {"source": "Deloitte_GCC", "company": "Deloitte", "topic": "GCC", "title": "GCC location strategy: cost is no longer the deciding factor", "url": "https://example.com/demo/deloitte-gcc-location", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-19T10:45:58+00:00", "cw": "CW 34", "summary": "Analysis of location decision criteria shifting from labor cost toward talent depth, AI readiness, and regulatory stability. Includes a comparative scorecard approach.", "score": 2, "cluster": "Big4"}, {"source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "From shared services to integrated business services: the next operating model", "url": "https://example.com/demo/mckinsey-ibs-operating-model", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-16T10:45:58+00:00", "cw": "CW 33", "summary": "Positions integrated business services as the successor to function-by-function shared services. Emphasises cross-functional process towers and a single service management layer.", "score": 2, "cluster": "MBB"}, {"source": "Accenture_GCC", "company": "Accenture", "topic": "GCC", "title": "Capability centers move up the value chain: from delivery to product", "url": "https://example.com/demo/accenture-gcc-value-chain", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-15T10:45:58+00:00", "cw": "CW 33", "summary": "Trend piece on GCCs taking ownership of digital products and platforms rather than executing delegated tasks.", "score": 2, "cluster": "Accenture"}, {"source": "EY_AI", "company": "EY", "topic": "AI", "title": "Why finance functions pilot agents faster than they scale them", "url": "https://example.com/demo/ey-agent-scaling", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-14T10:45:58+00:00", "cw": "CW 33", "summary": "Thought-leadership piece on the pilot-to-production gap in finance AI. Attributes the gap to data foundations and process standardisation rather than model capability.", "score": 2, "cluster": "Big4"}, {"source": "Deloitte_AI", "company": "Deloitte", "topic": "AI", "title": "Governance frameworks for autonomous agents in regulated functions", "url": "https://example.com/demo/deloitte-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-07T10:45:58+00:00", "cw": "CW 32", "summary": "Outlines control objectives and audit evidence for agent-executed finance processes. Relevant background for controls-heavy transformation work.", "score": 2, "cluster": "Big4"}, {"source": "PwC_GCC", "company": "PwC", "topic": "GCC", "title": "India GCC market update: hiring stabilises after two hot years", "url": "https://example.com/demo/pwc-gcc-update", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-12T10:45:58+00:00", "cw": "CW 33", "summary": "Quarterly market note on GCC hiring volumes and attrition. Useful context, limited direct strategic implication.", "score": 1, "cluster": "Big4"}, {"source": "KPMG_OM", "company": "KPMG", "topic": "OM", "title": "Webinar recap: target operating models for mid-market finance", "url": "https://example.com/demo/kpmg-tom-webinar", "tags": ["Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-10T10:45:58+00:00", "cw": "CW 33", "summary": "Summary of a webinar on TOM design for mid-market CFOs. Introductory level; limited strategic signal.", "score": 1, "cluster": "Big4"}, {"source": "Bain_GBS", "company": "Bain", "topic": "GBS", "title": "Podcast: what CFOs get wrong about shared services", "url": "https://example.com/demo/bain-ssc-podcast", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-08T10:45:58+00:00", "cw": "CW 32", "summary": "Conversational episode on common misconceptions about SSC economics. Light on new material; mostly restates established cost-to-serve arguments.", "score": 1, "cluster": "MBB"}];
+const SIGNALS = [{"domain": "example.com", "source": "Accenture_AI", "company": "Accenture", "topic": "AI", "title": "Accenture reports rapid growth in agentic AI bookings for operations", "url": "https://example.com/demo/accenture-agentic-bookings", "tags": ["Agentic_AI", "GBS"], "feed_type": "competitor", "created_at": "2026-08-31T11:28:11+00:00", "cw": "CW 36", "summary": "Earnings-adjacent communication highlighting strong bookings for agent-based operations transformation. Confirms competitor traction in AI-led delivery at scale.", "score": 3, "cluster": "Accenture"}, {"domain": "example.com", "source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "How agentic AI is rewriting the GBS playbook", "url": "https://example.com/demo/mckinsey-agentic-gbs", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-30T11:28:11+00:00", "cw": "CW 35", "summary": "Argues that autonomous agents shift GBS from labor arbitrage toward outcome-based delivery models. Outlines a maturity path from task automation to end-to-end process ownership and names talent redeployment as the binding constraint.", "score": 3, "cluster": "MBB"}, {"domain": "example.com", "source": "Deloitte_GBS", "company": "Deloitte", "topic": "GBS", "title": "Deloitte launches agentic AI suite for shared services operations", "url": "https://example.com/demo/deloitte-agentic-suite", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-29T11:28:11+00:00", "cw": "CW 35", "summary": "Product announcement: a packaged set of AI agents for invoice processing, journal preparation, and service desk triage aimed at GBS organisations. Signals a productised competitor offering in core finance operations.", "score": 3, "cluster": "Big4"}, {"domain": "example.com", "source": "BCG_GCC", "company": "BCG", "topic": "GCC", "title": "GCCs as innovation engines: five moves for the next 24 months", "url": "https://example.com/demo/bcg-gcc-innovation", "tags": ["GCC", "GBS"], "feed_type": "competitor", "created_at": "2026-08-28T11:28:11+00:00", "cw": "CW 35", "summary": "Argues capability centers should take product ownership rather than ticket queues. Five recommended moves include embedding AI engineering pods and rotating global process owners into the center.", "score": 3, "cluster": "MBB"}, {"domain": "example.com", "source": "EY_GBS", "company": "EY", "topic": "GBS", "title": "EY announces finance transformation alliance targeting GBS clients", "url": "https://example.com/demo/ey-gbs-alliance", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-27T11:28:11+00:00", "cw": "CW 35", "summary": "Alliance announcement combining a major ERP vendor's platform with EY's GBS advisory practice. A direct go-to-market signal in the finance transformation space.", "score": 3, "cluster": "Big4"}, {"domain": "example.com", "source": "PwC_AI", "company": "PwC", "topic": "AI", "title": "PwC embeds AI agents across managed services delivery", "url": "https://example.com/demo/pwc-managed-services-agents", "tags": ["Agentic_AI", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-25T11:28:11+00:00", "cw": "CW 35", "summary": "Announces agent-augmented delivery across PwC's managed services contracts, with stated productivity gains reinvested into pricing. A structural signal for outsourcing economics.", "score": 3, "cluster": "Big4"}, {"domain": "example.com", "source": "Bain_OM", "company": "Bain", "topic": "OM", "title": "Operating model design in the age of autonomous workflows", "url": "https://example.com/demo/bain-autonomous-workflows", "tags": ["Operating_Model", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-26T11:28:11+00:00", "cw": "CW 35", "summary": "Framework piece on how autonomous workflows change spans, layers, and the role of middle management in service delivery organisations.", "score": 2, "cluster": "MBB"}, {"domain": "example.com", "source": "McKinsey_AI", "company": "McKinsey", "topic": "AI", "title": "The state of AI agents in the enterprise: adoption outpaces governance", "url": "https://example.com/demo/mckinsey-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-23T11:28:11+00:00", "cw": "CW 34", "summary": "Survey-style piece finding that agent pilots are spreading faster than the control frameworks around them. Recommends pairing every deployment with a defined process owner and audit trail before scaling.", "score": 2, "cluster": "MBB"}, {"domain": "example.com", "source": "Accenture_GBS", "company": "Accenture", "topic": "GBS", "title": "Reinventing global delivery: composite teams of people and agents", "url": "https://example.com/demo/accenture-composite-teams", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-22T11:28:11+00:00", "cw": "CW 34", "summary": "Describes a delivery model where human process experts supervise fleets of task agents. Positions the model as the successor to pyramid-based offshore delivery.", "score": 2, "cluster": "Accenture"}, {"domain": "example.com", "source": "BCG_AI", "company": "BCG", "topic": "AI", "title": "Agentic AI pilots stall without process redesign, BCG survey finds", "url": "https://example.com/demo/bcg-agent-pilots", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-21T11:28:11+00:00", "cw": "CW 34", "summary": "Reports that a majority of surveyed agent pilots fail to scale because the surrounding process was left unchanged. Advocates redesigning the end-to-end flow before automating individual steps.", "score": 2, "cluster": "MBB"}, {"domain": "example.com", "source": "KPMG_GBS", "company": "KPMG", "topic": "GBS", "title": "Benchmarking the modern SSC: throughput, quality, experience", "url": "https://example.com/demo/kpmg-ssc-benchmark", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-20T11:28:11+00:00", "cw": "CW 34", "summary": "Benchmark methodology update adding employee and customer experience metrics to classic cost and productivity measures for shared service centers.", "score": 2, "cluster": "Big4"}, {"domain": "example.com", "source": "Deloitte_GCC", "company": "Deloitte", "topic": "GCC", "title": "GCC location strategy: cost is no longer the deciding factor", "url": "https://example.com/demo/deloitte-gcc-location", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-19T11:28:11+00:00", "cw": "CW 34", "summary": "Analysis of location decision criteria shifting from labor cost toward talent depth, AI readiness, and regulatory stability. Includes a comparative scorecard approach.", "score": 2, "cluster": "Big4"}, {"domain": "example.com", "source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "From shared services to integrated business services: the next operating model", "url": "https://example.com/demo/mckinsey-ibs-operating-model", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-16T11:28:11+00:00", "cw": "CW 33", "summary": "Positions integrated business services as the successor to function-by-function shared services. Emphasises cross-functional process towers and a single service management layer.", "score": 2, "cluster": "MBB"}, {"domain": "example.com", "source": "Accenture_GCC", "company": "Accenture", "topic": "GCC", "title": "Capability centers move up the value chain: from delivery to product", "url": "https://example.com/demo/accenture-gcc-value-chain", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-15T11:28:11+00:00", "cw": "CW 33", "summary": "Trend piece on GCCs taking ownership of digital products and platforms rather than executing delegated tasks.", "score": 2, "cluster": "Accenture"}, {"domain": "example.com", "source": "EY_AI", "company": "EY", "topic": "AI", "title": "Why finance functions pilot agents faster than they scale them", "url": "https://example.com/demo/ey-agent-scaling", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-14T11:28:11+00:00", "cw": "CW 33", "summary": "Thought-leadership piece on the pilot-to-production gap in finance AI. Attributes the gap to data foundations and process standardisation rather than model capability.", "score": 2, "cluster": "Big4"}, {"domain": "example.com", "source": "Deloitte_AI", "company": "Deloitte", "topic": "AI", "title": "Governance frameworks for autonomous agents in regulated functions", "url": "https://example.com/demo/deloitte-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-07T11:28:11+00:00", "cw": "CW 32", "summary": "Outlines control objectives and audit evidence for agent-executed finance processes. Relevant background for controls-heavy transformation work.", "score": 2, "cluster": "Big4"}, {"domain": "example.com", "source": "PwC_GCC", "company": "PwC", "topic": "GCC", "title": "India GCC market update: hiring stabilises after two hot years", "url": "https://example.com/demo/pwc-gcc-update", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-12T11:28:11+00:00", "cw": "CW 33", "summary": "Quarterly market note on GCC hiring volumes and attrition. Useful context, limited direct strategic implication.", "score": 1, "cluster": "Big4"}, {"domain": "example.com", "source": "KPMG_OM", "company": "KPMG", "topic": "OM", "title": "Webinar recap: target operating models for mid-market finance", "url": "https://example.com/demo/kpmg-tom-webinar", "tags": ["Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-10T11:28:11+00:00", "cw": "CW 33", "summary": "Summary of a webinar on TOM design for mid-market CFOs. Introductory level; limited strategic signal.", "score": 1, "cluster": "Big4"}, {"domain": "example.com", "source": "Bain_GBS", "company": "Bain", "topic": "GBS", "title": "Podcast: what CFOs get wrong about shared services", "url": "https://example.com/demo/bain-ssc-podcast", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-08T11:28:11+00:00", "cw": "CW 32", "summary": "Conversational episode on common misconceptions about SSC economics. Light on new material; mostly restates established cost-to-serve arguments.", "score": 1, "cluster": "MBB"}];
 
 let filters = { tag: 'all', search: '' };
 
@@ -338,12 +332,13 @@ function matches(s) {
 }
 
 function rowHtml(s) {
-  const star = s.score === 3 ? '<span class="star">★ High relevance · </span>' : '';
+  const star = s.score === 3 ? '<span class="star" title="High relevance">★</span> ' : '';
+  const dom = s.domain ? ' · ' + escHtml(s.domain) : '';
   const cw = s.cw ? ' · ' + escHtml(s.cw) : '';
   return '<div class="row">' +
-    '<div class="row-meta">' + star + '<span class="firm">' + escHtml(s.company) + '</span>' + cw + '</div>' +
+    '<div class="row-meta">' + star + '<span class="firm">' + escHtml(s.company) + '</span>' + dom + cw + '</div>' +
     '<a class="row-title" href="' + escHtml(s.url) + '" target="_blank" rel="noopener">' +
-      escHtml(s.title) + ' <span class="arrow">&#8599;</span></a>' +
+      escHtml(s.title) + '</a>' +
     '<div class="row-sum">' + escHtml(s.summary || '') + '</div>' +
   '</div>';
 }
@@ -361,9 +356,9 @@ function render() {
     return;
   }
 
-  const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '');
+  const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '') + ' · ranked by relevance · ★ = high';
   el.innerHTML =
-    '<div class="section-label sec-comp"><span>Signals</span><span class="count">' + label + '</span></div>' +
+    '<div class="list-head">' + label + '</div>' +
     visible.map(rowHtml).join('');
 }
 

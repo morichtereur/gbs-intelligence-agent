@@ -218,14 +218,28 @@ def is_blocked_domain(url: str, blocked_domains: list[str]) -> bool:
         return False
 
 
+_KW_CACHE: dict[str, re.Pattern] = {}
+
+
+def _kw_match(text: str, kw: str) -> bool:
+    """Word-boundary keyword match, so 'erp' never fires inside 'excerpt'."""
+    pat = _KW_CACHE.get(kw)
+    if pat is None:
+        pat = re.compile(r"(?<!\w)" + re.escape(kw.lower()) + r"(?!\w)")
+        _KW_CACHE[kw] = pat
+    return bool(pat.search(text))
+
+
 def infer_tags(text: str, tag_rules: dict[str, list[str]]) -> list[str]:
     t = (text or "").lower()
     found: list[str] = []
     for tag, keywords in tag_rules.items():
+        if tag.startswith("_") or not isinstance(keywords, list):
+            continue
         if ALLOWED_TAGS and tag not in ALLOWED_TAGS:
             continue
         for kw in keywords:
-            if kw.lower() in t:
+            if _kw_match(t, kw):
                 found.append(tag)
                 break
     return found

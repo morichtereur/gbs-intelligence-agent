@@ -8,6 +8,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
+from urllib.parse import urlparse
 
 DB_PATH = os.getenv("INTEL_DB_PATH", "intel.db")
 SOURCES_PATH = os.getenv("INTEL_SOURCES_PATH", "sources.json")
@@ -103,7 +104,15 @@ def fetch_all_signals() -> list[dict]:
         tag_list = [t.strip() for t in tags.split(",") if t.strip() and t.strip() != "Client_Signal"]
         cluster = company_to_cluster.get(company.lower(), "Other")
 
+        try:
+            domain = urlparse(url or "").netloc.lower()
+            if domain.startswith("www."):
+                domain = domain[4:]
+        except Exception:
+            domain = ""
+
         signals.append({
+            "domain": domain,
             "source": src,
             "company": company,
             "topic": topic,
@@ -346,7 +355,7 @@ HTML_TEMPLATE = r"""<!doctype html>
     .brand {
       font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--ink);
     }
     .masthead-meta {
       font-size: 12.5px;
@@ -355,11 +364,11 @@ HTML_TEMPLATE = r"""<!doctype html>
     .demo-chip {
       display: inline-block;
       font-size: 11px;
-      font-weight: 600;
-      color: var(--paper);
-      background: var(--accent);
-      padding: 1px 8px;
-      border-radius: 3px;
+      font-weight: 500;
+      color: var(--ink-2);
+      border: 1px solid var(--rule);
+      padding: 0 7px;
+      border-radius: 2px;
       margin-left: 8px;
       vertical-align: 1px;
     }
@@ -440,11 +449,11 @@ HTML_TEMPLATE = r"""<!doctype html>
 
     /* ── Filters ── */
     .filters {
-      padding: 20px 52px 16px;
+      padding: 14px 52px 0;
       display: flex;
-      gap: 10px;
+      gap: 0 22px;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: baseline;
       border-bottom: 1px solid var(--rule);
       position: sticky;
       top: 0;
@@ -454,48 +463,43 @@ HTML_TEMPLATE = r"""<!doctype html>
     .pill {
       font-family: var(--sans);
       font-size: 13.5px;
-      padding: 6px 14px;
-      border: 1px solid var(--rule);
-      border-radius: 17px;
-      background: var(--paper);
-      color: var(--ink-2);
+      padding: 6px 1px 11px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: var(--ink-3);
       cursor: pointer;
     }
-    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill:hover { color: var(--ink); }
     .pill.active {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: var(--paper);
+      color: var(--ink);
+      font-weight: 600;
+      border-bottom-color: var(--ink);
     }
-    .filter-sep { width: 1px; height: 22px; background: var(--rule); margin: 0 4px; }
     .search-input {
-      flex: 1;
-      min-width: 180px;
+      margin-left: auto;
+      flex: 0 1 200px;
+      min-width: 140px;
       font-family: var(--sans);
       font-size: 13.5px;
-      padding: 6px 14px;
-      border: 1px solid var(--rule);
-      border-radius: 17px;
+      padding: 6px 1px 10px;
+      border: none;
+      border-bottom: 1px solid var(--rule);
       color: var(--ink);
-      background: var(--paper);
+      background: none;
       outline: none;
     }
-    .search-input:focus { border-color: var(--accent); }
+    .search-input:focus { border-bottom-color: var(--ink); }
 
     /* ── Register ── */
     .register { padding: 4px 52px 44px; }
 
-    .section-label {
-      font-size: 13px;
-      font-weight: 600;
-      padding: 26px 0 8px;
+    .list-head {
+      font-size: 12.5px;
+      color: var(--ink-3);
+      padding: 22px 0 8px;
       border-bottom: 1px solid var(--ink);
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
     }
-    .section-label .count { color: var(--ink-3); font-weight: 400; }
-    .sec-comp { color: var(--ink); }
 
     .row {
       padding: 16px 0 18px;
@@ -507,7 +511,7 @@ HTML_TEMPLATE = r"""<!doctype html>
       margin-bottom: 3px;
     }
     .row-meta .firm { color: var(--ink-2); font-weight: 600; }
-    .row-meta .star { color: var(--accent); font-weight: 600; }
+    .row-meta .star { color: var(--accent); }
     .row-title {
       display: inline-block;
       font-family: var(--serif);
@@ -518,7 +522,6 @@ HTML_TEMPLATE = r"""<!doctype html>
       text-decoration: none;
     }
     .row-title:hover { color: var(--accent); text-decoration: underline; }
-    .row-title .arrow { font-family: var(--sans); font-size: 13px; color: var(--accent); }
     .row-sum {
       margin-top: 5px;
       font-size: 14px;
@@ -629,12 +632,13 @@ function matches(s) {
 }
 
 function rowHtml(s) {
-  const star = s.score === 3 ? '<span class="star">★ High relevance · </span>' : '';
+  const star = s.score === 3 ? '<span class="star" title="High relevance">★</span> ' : '';
+  const dom = s.domain ? ' · ' + escHtml(s.domain) : '';
   const cw = s.cw ? ' · ' + escHtml(s.cw) : '';
   return '<div class="row">' +
-    '<div class="row-meta">' + star + '<span class="firm">' + escHtml(s.company) + '</span>' + cw + '</div>' +
+    '<div class="row-meta">' + star + '<span class="firm">' + escHtml(s.company) + '</span>' + dom + cw + '</div>' +
     '<a class="row-title" href="' + escHtml(s.url) + '" target="_blank" rel="noopener">' +
-      escHtml(s.title) + ' <span class="arrow">&#8599;</span></a>' +
+      escHtml(s.title) + '</a>' +
     '<div class="row-sum">' + escHtml(s.summary || '') + '</div>' +
   '</div>';
 }
@@ -652,9 +656,9 @@ function render() {
     return;
   }
 
-  const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '');
+  const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '') + ' · ranked by relevance · ★ = high';
   el.innerHTML =
-    '<div class="section-label sec-comp"><span>Signals</span><span class="count">' + label + '</span></div>' +
+    '<div class="list-head">' + label + '</div>' +
     visible.map(rowHtml).join('');
 }
 

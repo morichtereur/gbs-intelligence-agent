@@ -66,33 +66,49 @@
   ],
 
   "tag_rules": {
+    "_comment": "Keywords match on word boundaries ('erp' will not fire inside 'excerpt'). Keep each theme distinct — overlapping keywords double-tag articles and muddy the dashboard matrix.",
     "GBS": [
       "gbs", "global business services", "shared services",
       "shared service center", "shared service centre", "ssc",
-      "service delivery", "delivery model", "operating model",
-      "target operating model", "global delivery model",
-      "business process services", "bpo"
+      "business services organization", "business services organisation",
+      "integrated business services",
+      "business process services", "business process outsourcing", "bpo",
+      "managed services", "finance operations"
     ],
     "GCC": [
-      "global capability center", "global capability centre",
-      "gcc", "global in-house center", "gic",
-      "captive center", "delivery center", "delivery centre"
+      "global capability center", "global capability centre", "gcc",
+      "global in-house center", "global in-house centre", "gic",
+      "captive center", "captive centre", "captive unit",
+      "delivery center", "delivery centre",
+      "nearshore", "nearshoring", "offshoring", "offshore center", "offshore centre",
+      "center of excellence", "centre of excellence"
     ],
     "Agentic_AI": [
       "agentic ai", "agentic", "ai agent", "ai agents",
-      "autonomous agent", "multi-agent", "agentic workflow",
-      "agent orchestration", "autonomous workflow"
+      "autonomous agent", "autonomous agents", "multi-agent",
+      "agentic workflow", "agent orchestration", "autonomous workflow",
+      "generative ai", "genai", "large language model", "llm",
+      "intelligent automation", "hyperautomation",
+      "digital workforce", "digital labor", "digital labour"
     ],
     "Operating_Model": [
-      "operating model", "target operating model", "tom",
-      "delivery model", "global delivery model", "service delivery model"
+      "operating model", "target operating model",
+      "delivery model", "service delivery model", "global delivery model",
+      "organizational design", "organisational design",
+      "location strategy", "workforce strategy", "span of control"
     ],
     "Client_Signal": [
-      "finance transformation", "record to report", "r2r",
-      "acquire to retire", "a2r", "asset accounting", "ifrs",
-      "treasury", "cfo", "finance function", "shared services",
-      "restructuring", "digital transformation", "erp", "sap",
-      "strategic review"
+      "finance transformation", "finance function",
+      "record to report", "r2r", "procure to pay", "p2p",
+      "order to cash", "o2c", "acquire to retire", "a2r",
+      "asset accounting", "ifrs", "treasury",
+      "cfo", "chief financial officer",
+      "shared services", "outsourcing", "offshoring",
+      "restructuring", "cost reduction", "cost savings",
+      "efficiency programme", "efficiency program",
+      "transformation programme", "transformation program",
+      "digital transformation", "erp", "s/4hana", "s4hana", "sap",
+      "strategic review", "carve-out", "spin-off", "post-merger integration"
     ]
   }
 }

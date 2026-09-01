@@ -201,7 +201,7 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 | `INTEL_DASHBOARD_WEEKS` | `4` | Explorer lookback in weeks |
 | `CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Claude model |
 | `CLAUDE_MAX_RETRIES` | `3` | API retries on rate limits / transient errors |
-| `INTEL_BRAND` | `Competitor & Client Intelligence` | Dashboard masthead |
+| `INTEL_BRAND` | `Competitor Intelligence` | Dashboard masthead |
 | `INTEL_BRAND_CONTEXT` | generic consulting team | Audience framing in the scoring prompt |
 | `INTEL_OWNER_NAME` / `_TITLE` / `_EMAIL` | — | Dashboard footer identity (hidden if unset) |
 | `INTEL_ORG_NAME` | `GBS Intelligence Agent` | Newsletter header |
@@ -224,17 +224,30 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 
 ## Suggested alert queries
 
-**Competitor monitoring:**
+The quality of the whole product starts with the alert queries. Three rules that work well in practice:
+
+1. **Scope competitor alerts to the firm's own domain** (`site:`) — you want what they *publish*, not what journalists write about them.
+2. **One alert per firm per theme** and name the feed `Firm_Theme` — the `source` name drives grouping and the dashboard matrix.
+3. **Quote multi-word phrases.** Unquoted words explode the noise.
+
+**Competitor monitoring (one per firm × theme):**
 ```
-site:mckinsey.com ("operating model" OR "global business services" OR "agentic ai")
+site:mckinsey.com ("global business services" OR "shared services" OR "integrated business services")
+site:mckinsey.com ("agentic AI" OR "AI agents" OR "autonomous agents")
+site:bcg.com ("capability center" OR "GCC" OR "nearshoring")
+site:bain.com ("operating model" OR "service delivery model")
 site:deloitte.com ("finance transformation" OR "shared services" OR "GBS")
+site:accenture.com ("intelligent operations" OR "agentic" OR "managed services")
 ```
 
-**Client monitoring:**
+**Client monitoring (one per account × angle):**
 ```
-"CompanyName" "finance transformation" OR "CFO" OR "operating model"
-"CompanyName" "shared services" OR "GBS" OR "global business services"
+"CompanyName" ("CFO" OR "chief financial officer" OR "finance transformation")
+"CompanyName" ("shared services" OR "capability center" OR "outsourcing")
+"CompanyName" ("restructuring" OR "cost reduction" OR "ERP" OR "S/4HANA")
 ```
+
+Everything an alert returns still passes the pipeline's own filters: word-boundary keyword tagging (`tag_rules`), career/people-page exclusions, the stock-noise domain blocklist, and Claude's relevance scoring.
 
 ---
 
