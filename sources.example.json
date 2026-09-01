@@ -80,23 +80,31 @@
   "tag_rules": {
     "_comment": "Themes follow the CFO-agenda pillars: Finance strategy (what should Finance become), GBS + GCC (how and where services are delivered), Controlling & FP&A (how the business is steered), with agentic AI as the cross-cutting layer. Keywords match on word boundaries ('erp' will not fire inside 'excerpt'). Keep themes distinct — overlapping keywords double-tag articles and muddy the dashboard matrix.",
     "Finance_Strategy": [
-      "finance transformation", "finance strategy", "cfo agenda",
-      "finance function", "digital finance", "finance vision",
-      "operating model", "target operating model",
-      "finance operating model", "organizational design", "organisational design"
+      "finance transformation", "cfo transformation", "finance strategy",
+      "cfo agenda", "finance function", "digital finance", "digital cfo",
+      "finance vision", "future of finance", "finance of the future",
+      "cfo of the future", "next-generation finance",
+      "finance modernization", "finance modernisation",
+      "operating model", "target operating model", "finance operating model",
+      "organizational design", "organisational design"
     ],
     "GBS": [
       "gbs", "global business services", "shared services",
-      "shared service center", "shared service centre", "ssc",
+      "shared service center", "shared service centre",
+      "shared services center", "shared services centre", "ssc",
       "business services organization", "business services organisation",
       "integrated business services",
       "business process services", "business process outsourcing", "bpo",
       "managed services", "finance operations", "outsourcing",
       "delivery model", "service delivery model", "global delivery model",
-      "location strategy", "transition management"
+      "location strategy", "transition management",
+      "global process owner", "process standardization", "process standardisation",
+      "process excellence", "process mining", "end-to-end process",
+      "service level agreement"
     ],
     "GCC": [
       "global capability center", "global capability centre", "gcc",
+      "capability center", "capability centre", "capability hub",
       "global in-house center", "global in-house centre", "gic",
       "captive center", "captive centre", "captive unit",
       "delivery center", "delivery centre",
@@ -106,30 +114,39 @@
     "Controlling_FPA": [
       "fp&a", "financial planning and analysis", "xp&a",
       "financial controlling", "controlling function", "group controlling",
-      "management reporting", "planning and forecasting", "forecasting",
-      "budgeting", "steering model", "performance management",
-      "business partnering", "financial controller"
+      "controlling transformation", "management accounting",
+      "management reporting", "management information",
+      "planning and forecasting", "financial forecasting", "rolling forecast",
+      "driver-based planning", "integrated business planning",
+      "zero-based budgeting", "budgeting", "scenario planning",
+      "variance analysis", "profitability analysis",
+      "steering model", "performance management",
+      "business partnering", "financial controller", "decision support"
     ],
     "Agentic_AI": [
       "agentic ai", "agentic", "ai agent", "ai agents",
       "autonomous agent", "autonomous agents", "multi-agent",
       "agentic workflow", "agent orchestration", "autonomous workflow",
+      "ai orchestration", "ai transformation", "autonomous finance",
       "generative ai", "genai", "large language model", "llm",
       "intelligent automation", "hyperautomation",
-      "digital workforce", "digital labor", "digital labour"
+      "digital workforce", "digital worker", "digital workers",
+      "digital labor", "digital labour"
     ],
     "Client_Signal": [
       "finance transformation", "finance function",
       "record to report", "r2r", "procure to pay", "p2p",
       "order to cash", "o2c", "acquire to retire", "a2r",
-      "asset accounting", "ifrs", "treasury",
+      "asset accounting", "ifrs", "treasury", "working capital",
       "cfo", "chief financial officer",
       "shared services", "outsourcing", "offshoring",
-      "restructuring", "cost reduction", "cost savings",
+      "restructuring", "cost reduction", "cost savings", "cost-cutting",
+      "cost programme", "cost program", "profit warning", "layoffs",
       "efficiency programme", "efficiency program",
       "transformation programme", "transformation program",
       "digital transformation", "erp", "s/4hana", "s4hana", "sap",
-      "strategic review", "carve-out", "spin-off", "post-merger integration"
+      "strategic review", "carve-out", "spin-off",
+      "divestment", "divestiture", "post-merger integration"
     ]
   }
 }

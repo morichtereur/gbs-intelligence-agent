@@ -227,10 +227,11 @@ _KW_CACHE: dict[str, re.Pattern] = {}
 
 
 def _kw_match(text: str, kw: str) -> bool:
-    """Word-boundary keyword match, so 'erp' never fires inside 'excerpt'."""
+    """Word-boundary keyword match ('erp' never fires inside 'excerpt'),
+    tolerating a trailing plural s ('capability center' matches 'centers')."""
     pat = _KW_CACHE.get(kw)
     if pat is None:
-        pat = re.compile(r"(?<!\w)" + re.escape(kw.lower()) + r"(?!\w)")
+        pat = re.compile(r"(?<!\w)" + re.escape(kw.lower()) + r"s?(?!\w)")
         _KW_CACHE[kw] = pat
     return bool(pat.search(text))
 
