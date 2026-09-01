@@ -77,6 +77,7 @@ If any of the following apply, respond exactly: SKIP
 
 Otherwise respond in this exact format (no extra text):
 SCORE: [1, 2, or 3]
+TYPE: [MOVE or RESEARCH] — MOVE = market move demanding a competitive response (new offering, alliance, M&A, analyst positioning, client win); RESEARCH = survey, report, or thought leadership to read and cite
 SUMMARY: [2-3 sentences, max 60 words, factual, no hype]
 
 Title: {title}
@@ -125,19 +126,20 @@ def _call_claude(prompt: str) -> str:
     return ""
 
 
-def parse_response(raw: str) -> tuple[int, str]:
+def parse_response(raw: str) -> tuple[int, str, str]:
     """
-    Parse Claude response into (score, summary).
-    Returns (0, 'SKIP') for skip, (score, summary) for valid responses.
+    Parse Claude response into (score, summary, signal_type).
+    Returns (0, 'SKIP', '') for skip; signal_type is 'move' or 'research'.
     """
     if not raw:
-        return 0, ""
+        return 0, "", ""
 
     if raw.strip().upper() == "SKIP":
-        return 0, "SKIP"
+        return 0, "SKIP", ""
 
     score = 0
     summary = ""
+    signal_type = ""
 
     for line in raw.split("\n"):
         line = line.strip()
@@ -147,6 +149,12 @@ def parse_response(raw: str) -> tuple[int, str]:
                 score = max(1, min(3, score))  # clamp to 1-3
             except ValueError:
                 score = 1
+        elif line.upper().startswith("TYPE:"):
+            t = line.split(":", 1)[1].strip().upper()
+            if "MOVE" in t:
+                signal_type = "move"
+            elif "RESEARCH" in t:
+                signal_type = "research"
         elif line.upper().startswith("SUMMARY:"):
             summary = line.split(":", 1)[1].strip()
         elif summary and line:
@@ -158,29 +166,29 @@ def parse_response(raw: str) -> tuple[int, str]:
         summary = raw
         score = score or 2
 
-    return score, clamp_text(summary, 600)
+    return score, clamp_text(summary, 600), signal_type
 
 
-def llm_summarize(title: str, url: str, snippet: str, feed_type: str = "competitor") -> tuple[int, str]:
-    """Returns (score, summary). Score 0 = SKIP."""
+def llm_summarize(title: str, url: str, snippet: str, feed_type: str = "competitor") -> tuple[int, str, str]:
+    """Returns (score, summary, signal_type). Score 0 = SKIP."""
     if (not ENABLE_LLM) or (not ANTHROPIC_API_KEY):
         base = clamp_text(snippet or "", 420)
-        return 2, base if base else "No AI summary available. Please open the link for details."
+        return 2, base if base else "No AI summary available. Please open the link for details.", ""
 
     prompt = _build_prompt(title, url, snippet, feed_type)
     raw = _call_claude(prompt)
 
     if not raw:
-        return 0, ""
+        return 0, "", ""
 
     if raw.strip().upper() == "SKIP":
-        return 0, "SKIP"
+        return 0, "SKIP", ""
 
     return parse_response(raw)
 
 
 def ensure_score_column(con: sqlite3.Connection) -> None:
-    """Add relevance_score column if missing."""
+    """Add relevance_score and signal_type columns if missing."""
     try:
         cur = con.cursor()
         cols = [r[1] for r in cur.execute("PRAGMA table_info(article_summaries)").fetchall()]
@@ -188,8 +196,12 @@ def ensure_score_column(con: sqlite3.Connection) -> None:
             cur.execute("ALTER TABLE article_summaries ADD COLUMN relevance_score INTEGER DEFAULT 2")
             con.commit()
             print("[info] Added relevance_score column to article_summaries")
+        if "signal_type" not in cols:
+            cur.execute("ALTER TABLE article_summaries ADD COLUMN signal_type TEXT DEFAULT ''")
+            con.commit()
+            print("[info] Added signal_type column to article_summaries")
     except Exception as e:
-        sys.stderr.write(f"[WARN] Could not add score column: {e}\n")
+        sys.stderr.write(f"[WARN] Could not add column: {e}\n")
 
 
 def main() -> int:
@@ -203,7 +215,8 @@ def main() -> int:
                 article_id TEXT PRIMARY KEY,
                 bullets TEXT,
                 created_at TEXT,
-                relevance_score INTEGER DEFAULT 2
+                relevance_score INTEGER DEFAULT 2,
+                signal_type TEXT DEFAULT ''
             )
             """
         )
@@ -238,20 +251,20 @@ def main() -> int:
 
         for article_id, title, url, snippet, feed_type in rows:
             try:
-                score, summary = llm_summarize(title=title, url=url, snippet=snippet, feed_type=feed_type)
+                score, summary, signal_type = llm_summarize(title=title, url=url, snippet=snippet, feed_type=feed_type)
 
                 if score == 0 or summary.upper() == "SKIP":
                     cur.execute(
-                        "INSERT OR REPLACE INTO article_summaries(article_id, bullets, relevance_score, created_at) VALUES (?,?,?,?)",
-                        (article_id, "", 0, now_utc_iso()),
+                        "INSERT OR REPLACE INTO article_summaries(article_id, bullets, relevance_score, signal_type, created_at) VALUES (?,?,?,?,?)",
+                        (article_id, "", 0, "", now_utc_iso()),
                     )
                     con.commit()
                     skipped += 1
                     continue
 
                 cur.execute(
-                    "INSERT OR REPLACE INTO article_summaries(article_id, bullets, relevance_score, created_at) VALUES (?,?,?,?)",
-                    (article_id, summary, score, now_utc_iso()),
+                    "INSERT OR REPLACE INTO article_summaries(article_id, bullets, relevance_score, signal_type, created_at) VALUES (?,?,?,?,?)",
+                    (article_id, summary, score, signal_type, now_utc_iso()),
                 )
                 con.commit()
                 saved += 1

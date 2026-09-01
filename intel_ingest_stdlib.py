@@ -31,7 +31,7 @@ MAX_AGE_DAYS = int(os.getenv("INTEL_MAX_AGE_DAYS", "60"))
 
 ALLOWED_TAGS = [
     t.strip()
-    for t in os.getenv("INTEL_ALLOWED_TAGS", "GBS,GCC,Agentic_AI,Operating_Model,Client_Signal,Analyst_Research").split(",")
+    for t in os.getenv("INTEL_ALLOWED_TAGS", "Finance_Strategy,GBS,GCC,Controlling_FPA,Agentic_AI,Client_Signal,Analyst_Research").split(",")
     if t.strip()
 ]
 REQUIRE_TAG_MATCH = os.getenv("INTEL_REQUIRE_TAG_MATCH", "1").strip() not in ("0", "false", "False")

@@ -23,9 +23,13 @@ OWNER_TITLE = os.getenv("INTEL_OWNER_TITLE", "").strip()
 OWNER_EMAIL = os.getenv("INTEL_OWNER_EMAIL", "").strip()
 DEMO_LABEL = os.getenv("INTEL_DEMO_LABEL", "").strip()
 
+# Themes follow the CFO-agenda pillars: strategy, delivery (GBS/GCC),
+# steering (Controlling & FP&A), with agentic AI as the cross-cutting layer.
 TAG_LABELS = {
+    "Finance_Strategy": "Finance strategy",
     "GBS": "GBS",
     "GCC": "GCC",
+    "Controlling_FPA": "Controlling & FP&A",
     "Agentic_AI": "Agentic AI",
     "Operating_Model": "Operating model",
     "Analyst_Research": "Analyst research",
@@ -81,6 +85,12 @@ def fetch_all_signals() -> list[dict]:
     start = (datetime.now(timezone.utc) - timedelta(weeks=WINDOW_WEEKS)).isoformat()
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
+    # Older databases may predate the signal_type column.
+    try:
+        cur.execute("ALTER TABLE article_summaries ADD COLUMN signal_type TEXT DEFAULT ''")
+        con.commit()
+    except Exception:
+        pass
     cur.execute(
         """
         SELECT
@@ -91,7 +101,8 @@ def fetch_all_signals() -> list[dict]:
             COALESCE(a.feed_type, 'competitor') as feed_type,
             a.created_at,
             COALESCE(s.bullets, '') as summary,
-            COALESCE(s.relevance_score, 2) as relevance_score
+            COALESCE(s.relevance_score, 2) as relevance_score,
+            COALESCE(s.signal_type, '') as signal_type
         FROM articles a
         LEFT JOIN article_summaries s ON s.article_id = a.article_id
         WHERE a.created_at >= ?
@@ -123,7 +134,7 @@ def fetch_all_signals() -> list[dict]:
 
     signals = []
     seen_urls: set[str] = set()
-    for src, title, url, tags, feed_type, created_at, summary, score in rows:
+    for src, title, url, tags, feed_type, created_at, summary, score, signal_type in rows:
         # The same article often arrives through several alert feeds —
         # keep only the first (highest-scored) occurrence per URL.
         clean = (url or "").strip()
@@ -166,6 +177,7 @@ def fetch_all_signals() -> list[dict]:
             "cw": cw,
             "summary": summary,
             "score": int(score),
+            "signal_type": (signal_type or "").strip().lower(),
             "cluster": cluster,
         })
 
@@ -553,6 +565,24 @@ HTML_TEMPLATE = r"""<!doctype html>
       border-bottom: 1px solid var(--ink);
     }
 
+    .group-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 26px 0 7px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .group-label .count { font-family: var(--sans); font-size: 12px; font-weight: 400; color: var(--ink-3); }
+    .group-sub {
+      font-size: 12.5px;
+      color: var(--ink-3);
+      padding: 4px 0 2px;
+    }
+
     .row {
       padding: 16px 0 18px;
       border-bottom: 1px solid var(--rule-soft);
@@ -702,6 +732,20 @@ function sortSignals(list) {
   return list.slice().sort((a, b) => (b.score - a.score) || (a.created_at < b.created_at ? 1 : -1));
 }
 
+const MOVE_HINT = /\b(launch|launches|announces?|acquir|invest|alliance|partner|unveil|introduc|recogni[sz]ed|leader in|expands?|wins?)\b/i;
+
+function signalType(s) {
+  if (s.signal_type === 'move' || s.signal_type === 'research') return s.signal_type;
+  return MOVE_HINT.test(s.title) ? 'move' : 'research';
+}
+
+function groupHtml(title, sub, items) {
+  if (!items.length) return '';
+  return '<div class="group-label"><span>' + title + '</span><span class="count">' + items.length + '</span></div>' +
+    '<div class="group-sub">' + sub + '</div>' +
+    items.map(rowHtml).join('');
+}
+
 function render() {
   const el = document.getElementById('register');
   const visible = sortSignals(SIGNALS.filter(matches));
@@ -711,10 +755,14 @@ function render() {
     return;
   }
 
+  const moves = visible.filter(s => signalType(s) === 'move');
+  const research = visible.filter(s => signalType(s) === 'research');
+
   const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '') + ' · ranked by relevance · ★ = high';
   el.innerHTML =
     '<div class="list-head">' + label + '</div>' +
-    visible.map(rowHtml).join('');
+    groupHtml('Market moves', 'Offerings, alliances, M&amp;A, positioning — moves that may demand a competitive response.', moves) +
+    groupHtml('Research &amp; viewpoints', 'Surveys, reports, and thought leadership — to read, cite, and benchmark against.', research);
 }
 
 document.querySelectorAll('.pill[data-filter]').forEach(pill => {

@@ -63,7 +63,9 @@ A standalone consulting-style HTML dashboard focused on the consultancies — no
 
 - **Answer-first headline** derived from the week's data (top theme, most active firm)
 - **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**), with firm logos
-- **Signal list** ranked by relevance — each title links straight to the source, with the firm logo, AI summary, and source domain
+- **Themes follow the CFO agenda**: Finance strategy · GBS · GCC · Controlling & FP&A, with agentic AI as the cross-cutting layer
+- **Signal list in two groups**, each ranked by relevance: **Market moves** (offerings, alliances, M&A — may demand a competitive response) and **Research & viewpoints** (surveys and thought leadership — to read, cite, and benchmark against); classification comes from the scoring model
+- Each title links straight to the source, with the firm logo, AI summary, and source domain
 - Theme filter and full-text search, keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer
 
 Client signals stay in the email brief; the dashboard deliberately keeps only the competitor view.
@@ -146,6 +148,7 @@ site:bcg.com ("capability center" OR "GCC" OR "nearshoring")
 site:bain.com ("operating model" OR "service delivery model")
 site:deloitte.com ("finance transformation" OR "shared services" OR "GBS")
 site:accenture.com ("intelligent operations" OR "agentic" OR "managed services")
+site:kpmg.com ("FP&A" OR "financial controlling" OR "planning and forecasting")
 ```
 
 Client monitoring (one per account × angle):

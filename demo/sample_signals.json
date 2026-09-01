@@ -6,70 +6,94 @@
       "title": "The state of AI in 2026: On the road to ROI",
       "summary": "Global survey of 1,700+ respondents: 89% use AI in at least one function and 44% have scaled it across the organisation, yet only 6% qualify as high performers attributing 5%+ of EBIT to AI. The scaling-to-value gap is the core message.",
       "url": "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
-      "tags": ["Agentic_AI"],
+      "tags": [
+        "Agentic_AI"
+      ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 7
+      "days_ago": 7,
+      "signal_type": "research"
     },
     {
       "source": "McKinsey_AI",
       "title": "How to close the agentic adoption gap",
       "summary": "Argues AI transformations are a reinvention of how work gets done: successful adopters spend $3 on process redesign and $5 on capability building for every $1 on agentic technology — most companies invert the ratio.",
       "url": "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/how-to-close-the-agentic-adoption-gap",
-      "tags": ["Agentic_AI", "Operating_Model"],
+      "tags": [
+        "Agentic_AI",
+        "Finance_Strategy"
+      ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 25
+      "days_ago": 25,
+      "signal_type": "research"
     },
     {
       "source": "Deloitte_AI",
       "title": "AI Agents are Only the Beginning: Deloitte Survey Examines the AI Readiness Gap",
       "summary": "Survey of 501 senior leaders: 74% expect nearly half of business processes to be redesigned or rebuilt around AI agents within four years, yet only 5% say their processes are highly prepared today.",
       "url": "https://www.deloitte.com/us/en/about/press-room/deloitte-survey-examines-ai-readiness-agentic-ai-success.html",
-      "tags": ["Agentic_AI", "Operating_Model"],
+      "tags": [
+        "Agentic_AI",
+        "Finance_Strategy"
+      ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 20
+      "days_ago": 20,
+      "signal_type": "research"
     },
     {
       "source": "Deloitte_GBS",
       "title": "What does the rise in agentic AI mean for Global Business Services?",
       "summary": "Dbriefs session on how agentic AI reorients GBS from transactional execution toward oversight and orchestration — organisational rethinking, adoption strategy, and implementation barriers.",
       "url": "https://www.deloitte.com/us/en/dbriefs-webcasts/what-does-the-rise-in-agentic-ai-mean-for-global-business-services.html",
-      "tags": ["GBS", "Agentic_AI"],
+      "tags": [
+        "GBS",
+        "Agentic_AI"
+      ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 40
+      "days_ago": 40,
+      "signal_type": "research"
     },
     {
       "source": "PwC_AI",
       "title": "PwC and OpenAI launch agentic contact and service solutions",
       "summary": "PwC US launches an 'agentic front office' for customer engagement and service, developed with OpenAI — a productised competitor offering built on a frontier-lab partnership.",
       "url": "https://www.pwc.com/us/en/about-us/newsroom/press-releases/pwc-openai-agentic-contact-service-solutions.html",
-      "tags": ["Agentic_AI"],
+      "tags": [
+        "Agentic_AI"
+      ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 48
+      "days_ago": 48,
+      "signal_type": "move"
     },
     {
       "source": "KPMG_AI",
       "title": "KPMG Quarterly AI Pulse Survey: Technology",
       "summary": "Quarterly pulse of technology leaders: AI investment and agent adoption hold steady while leading firms shift focus from deployment to coordination, cost visibility, and executive accountability.",
       "url": "https://kpmg.com/us/en/articles/2026/kpmg-quarterly-ai-pulse-survey-technology.html",
-      "tags": ["Agentic_AI"],
+      "tags": [
+        "Agentic_AI"
+      ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 36
+      "days_ago": 36,
+      "signal_type": "research"
     },
     {
       "source": "Accenture_AI",
       "title": "Accenture Edge and Google Cloud Bring Scalable Agentic AI Solutions to Mid-Market Companies",
       "summary": "Pre-built, industry-specific agent solutions for mid-market companies ($300M–$3B revenue) — packaged agentic delivery moving down-market, with implications for services pricing.",
       "url": "https://newsroom.accenture.com/news/2026/accenture-edge-and-google-cloud-bring-scalable-agentic-ai-solutions-to-mid-market-companies",
-      "tags": ["Agentic_AI"],
+      "tags": [
+        "Agentic_AI"
+      ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 56
+      "days_ago": 56,
+      "signal_type": "move"
     },
     {
       "source": "Nordwind_Finance",
@@ -79,37 +103,47 @@
       "tags": [],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 3
+      "days_ago": 3,
+      "signal_type": "move"
     },
     {
       "source": "Nordwind_GBS",
       "title": "Nordwind to consolidate European back-office functions in Lisbon hub",
       "summary": "Announces consolidation of finance and HR back-office activities into a single European hub. Signals an active shared services agenda with likely demand for transition and process design support.",
       "url": "https://example.com/demo/nordwind-lisbon-hub",
-      "tags": ["GBS"],
+      "tags": [
+        "GBS"
+      ],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 12
+      "days_ago": 12,
+      "signal_type": "move"
     },
     {
       "source": "Cantara_Finance",
       "title": "Cantara Group launches group-wide ERP consolidation programme",
       "summary": "Multi-year programme to consolidate regional ERP instances onto a single platform. Indicates budget committed to finance infrastructure and openness to transformation partners.",
       "url": "https://example.com/demo/cantara-erp",
-      "tags": ["Operating_Model"],
+      "tags": [
+        "Finance_Strategy"
+      ],
       "feed_type": "client",
       "score": 2,
-      "days_ago": 8
+      "days_ago": 8,
+      "signal_type": "move"
     },
     {
       "source": "Veltena_Finance",
       "title": "Veltena Pharma plans shared services expansion into Krakow",
       "summary": "Expansion of the existing shared services footprint with a new Krakow site focused on record-to-report and procurement operations. Direct signal of GBS build-out with near-term advisory needs.",
       "url": "https://example.com/demo/veltena-krakow",
-      "tags": ["GBS"],
+      "tags": [
+        "GBS"
+      ],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 6
+      "days_ago": 6,
+      "signal_type": "move"
     },
     {
       "source": "Brenner_Finance",
@@ -119,7 +153,8 @@
       "tags": [],
       "feed_type": "client",
       "score": 2,
-      "days_ago": 15
+      "days_ago": 15,
+      "signal_type": "move"
     }
   ]
 }

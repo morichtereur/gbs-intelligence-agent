@@ -78,14 +78,22 @@
   ],
 
   "tag_rules": {
-    "_comment": "Keywords match on word boundaries ('erp' will not fire inside 'excerpt'). Keep each theme distinct — overlapping keywords double-tag articles and muddy the dashboard matrix.",
+    "_comment": "Themes follow the CFO-agenda pillars: Finance strategy (what should Finance become), GBS + GCC (how and where services are delivered), Controlling & FP&A (how the business is steered), with agentic AI as the cross-cutting layer. Keywords match on word boundaries ('erp' will not fire inside 'excerpt'). Keep themes distinct — overlapping keywords double-tag articles and muddy the dashboard matrix.",
+    "Finance_Strategy": [
+      "finance transformation", "finance strategy", "cfo agenda",
+      "finance function", "digital finance", "finance vision",
+      "operating model", "target operating model",
+      "finance operating model", "organizational design", "organisational design"
+    ],
     "GBS": [
       "gbs", "global business services", "shared services",
       "shared service center", "shared service centre", "ssc",
       "business services organization", "business services organisation",
       "integrated business services",
       "business process services", "business process outsourcing", "bpo",
-      "managed services", "finance operations"
+      "managed services", "finance operations", "outsourcing",
+      "delivery model", "service delivery model", "global delivery model",
+      "location strategy", "transition management"
     ],
     "GCC": [
       "global capability center", "global capability centre", "gcc",
@@ -95,6 +103,13 @@
       "nearshore", "nearshoring", "offshoring", "offshore center", "offshore centre",
       "center of excellence", "centre of excellence"
     ],
+    "Controlling_FPA": [
+      "fp&a", "financial planning and analysis", "xp&a",
+      "financial controlling", "controlling function", "group controlling",
+      "management reporting", "planning and forecasting", "forecasting",
+      "budgeting", "steering model", "performance management",
+      "business partnering", "financial controller"
+    ],
     "Agentic_AI": [
       "agentic ai", "agentic", "ai agent", "ai agents",
       "autonomous agent", "autonomous agents", "multi-agent",
@@ -102,12 +117,6 @@
       "generative ai", "genai", "large language model", "llm",
       "intelligent automation", "hyperautomation",
       "digital workforce", "digital labor", "digital labour"
-    ],
-    "Operating_Model": [
-      "operating model", "target operating model",
-      "delivery model", "service delivery model", "global delivery model",
-      "organizational design", "organisational design",
-      "location strategy", "workforce strategy", "span of control"
     ],
     "Client_Signal": [
       "finance transformation", "finance function",

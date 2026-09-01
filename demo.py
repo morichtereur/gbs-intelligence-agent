@@ -47,7 +47,8 @@ def seed_database() -> int:
         CREATE TABLE article_summaries (
             article_id TEXT PRIMARY KEY,
             bullets TEXT, created_at TEXT,
-            relevance_score INTEGER DEFAULT 2
+            relevance_score INTEGER DEFAULT 2,
+            signal_type TEXT DEFAULT ''
         )
         """
     )
@@ -64,8 +65,8 @@ def seed_database() -> int:
             ),
         )
         cur.execute(
-            "INSERT INTO article_summaries VALUES (?,?,?,?)",
-            (article_id, s["summary"], ts, s["score"]),
+            "INSERT INTO article_summaries VALUES (?,?,?,?,?)",
+            (article_id, s["summary"], ts, s["score"], s.get("signal_type", "")),
         )
     con.commit()
     con.close()

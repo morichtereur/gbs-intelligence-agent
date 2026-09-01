@@ -50,7 +50,7 @@ set_env_default INTEL_WINDOW_DAYS        "7"
 set_env_default INTEL_MAX_SUMMARIZE      "30"
 set_env_default INTEL_REQUIRE_TAG_MATCH  "1"
 set_env_default INTEL_DEDUP_ON_CANONICAL "1"
-set_env_default INTEL_ALLOWED_TAGS       "GBS,GCC,Agentic_AI,Operating_Model,Client_Signal"
+set_env_default INTEL_ALLOWED_TAGS       "Finance_Strategy,GBS,GCC,Controlling_FPA,Agentic_AI,Client_Signal"
 set_env_default INTEL_MIN_SCORE          "3"
 
 set_env_default ENABLE_LLM               "1"
