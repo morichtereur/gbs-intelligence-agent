@@ -31,9 +31,9 @@ The demo seeds bundled sample signals (clearly labeled as illustrative) and runs
 
 ---
 
-## What it does
+## How it works
 
-The agent monitors public sources for strategic signals relevant to **Global Business Services (GBS)**, **Global Capability Centers (GCC)**, and **Agentic AI** — and delivers a curated weekly intelligence product automatically.
+The agent monitors public sources for strategic signals relevant to **Global Business Services (GBS)**, **Global Capability Centers (GCC)**, and **Agentic AI** — and turns them into a curated weekly intelligence product.
 
 ```mermaid
 flowchart LR
@@ -47,18 +47,15 @@ flowchart LR
 ```
 
 **Every Monday morning, automatically:**
-- Ingests 50+ RSS feeds across competitor firms and client companies
-- Filters noise up front: job posts, people profiles, stock trackers, blocked domains
-- Scores each article 1–3 for strategic relevance using Claude, with an advisory-lens prompt for client signals
-- Renders an email brief with only the highest-signal articles
-- Builds the Intelligence Explorer dashboard for deeper exploration
-- Sends the brief by email and archives output by calendar week
-
-The pipeline is deliberately conservative: it stops on any failed stage or feed fetch so it never sends a partial newsletter, and the edition counter is committed only after the email goes out.
+1. Ingest 50+ RSS feeds across competitor firms and client companies
+2. Filter noise up front — job posts, people profiles, stock trackers, blocked domains
+3. Score each article 1–3 for strategic relevance with Claude, using an advisory-lens prompt for client signals
+4. Render the email brief (highest-signal articles only) and the dashboard
+5. Send the brief by email and archive everything by calendar week
 
 ---
 
-## The weekly product
+## What you get
 
 ### Intelligence Explorer
 
@@ -66,9 +63,8 @@ A standalone consulting-style HTML dashboard focused on the consultancies — no
 
 - **Answer-first headline** derived from the week's data (top theme, most active firm)
 - **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**)
-- **Signal list** ranked by relevance — each title links straight to the source, with the AI summary underneath
+- **Signal list** ranked by relevance — each title links straight to the source, with the AI summary and source domain underneath
 - Theme filter and full-text search, keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer
-- Duplicate articles arriving through several alert feeds are collapsed to one entry
 
 Client signals stay in the email brief; the dashboard deliberately keeps only the competitor view.
 
@@ -95,6 +91,19 @@ Running cost is small: the default model is Claude Haiku and a weekly run scores
 
 ---
 
+## Built to run unattended
+
+Design decisions for a pipeline that runs from cron with nobody watching:
+
+- **Fail closed.** Any failed stage or feed fetch stops the run before delivery — a partial newsletter is never sent (`INTEL_FAIL_ON_FEED_ERROR=0` opts out).
+- **Edition numbering survives failures.** The counter is committed only after the email actually goes out, so a crashed run doesn't burn an edition.
+- **Transient API errors don't kill the run.** Claude calls retry on rate limits and 5xx with exponential backoff.
+- **Duplicates collapse.** The same article arriving through several alert feeds is stored once per feed but shown once — deduplicated by canonical URL (tracking parameters and Google redirects stripped).
+- **Precise tagging.** Keywords match on word boundaries, so `erp` never fires inside "excerpt"; articles matching no theme are dropped before they cost an API call.
+- **Everything is inspectable.** Plain SQLite, plain HTML output archived per calendar week, one log file.
+
+---
+
 ## Setup
 
 ### 1. Clone and install
@@ -115,16 +124,38 @@ export INTEL_RECIPIENTS="recipient@email.com"
 
 Add to `~/.zshrc` or `~/.bashrc` for persistence.
 
-### 3. Configure feeds
+### 3. Create alerts and configure feeds
+
 ```bash
 cp sources.example.json sources.json
 ```
 
-Edit `sources.json`:
-1. Go to [google.com/alerts](https://www.google.com/alerts)
-2. Create alerts with **Deliver to: RSS feed**
-3. Copy feed URLs into `sources.json`
-4. Add company names to `competitor_sources` or `client_sources`
+Create alerts at [google.com/alerts](https://www.google.com/alerts) with **Deliver to: RSS feed**, copy the feed URLs into `sources.json`, and add the firm names to `competitor_sources` or `client_sources`.
+
+The quality of the whole product starts with the alert queries. Three rules that work well in practice:
+
+1. **Scope competitor alerts to the firm's own domain** (`site:`) — you want what they *publish*, not what journalists write about them.
+2. **One alert per firm per theme**, named `Firm_Theme` — the `source` name drives grouping and the dashboard matrix.
+3. **Quote multi-word phrases.** Unquoted words explode the noise.
+
+Competitor monitoring (one per firm × theme):
+```
+site:mckinsey.com ("global business services" OR "shared services" OR "integrated business services")
+site:mckinsey.com ("agentic AI" OR "AI agents" OR "autonomous agents")
+site:bcg.com ("capability center" OR "GCC" OR "nearshoring")
+site:bain.com ("operating model" OR "service delivery model")
+site:deloitte.com ("finance transformation" OR "shared services" OR "GBS")
+site:accenture.com ("intelligent operations" OR "agentic" OR "managed services")
+```
+
+Client monitoring (one per account × angle):
+```
+"CompanyName" ("CFO" OR "chief financial officer" OR "finance transformation")
+"CompanyName" ("shared services" OR "capability center" OR "outsourcing")
+"CompanyName" ("restructuring" OR "cost reduction" OR "ERP" OR "S/4HANA")
+```
+
+Everything an alert returns still passes the pipeline's own filters: word-boundary keyword tagging (`tag_rules`), career/people-page exclusions, the stock-noise domain blocklist, and Claude's relevance scoring.
 
 ### 4. Run
 ```bash
@@ -151,7 +182,7 @@ Adjust UTC offset for your timezone.
 All branding is optional and off by default, so the tool ships neutral:
 
 ```bash
-export INTEL_BRAND="Competitor & Client Intelligence"   # dashboard masthead
+export INTEL_BRAND="Competitor Intelligence"            # dashboard masthead
 export INTEL_BRAND_CONTEXT="a GBS transformation team at Acme Consulting"  # scoring prompt audience
 export INTEL_OWNER_NAME="Your Name"                     # dashboard footer
 export INTEL_OWNER_TITLE="Consultant"
@@ -219,35 +250,6 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 - **Gmail SMTP** — newsletter delivery
 - **Google Alerts** — RSS feed source (free)
 - **Vanilla HTML/CSS/JS** — dashboard, no framework needed
-
----
-
-## Suggested alert queries
-
-The quality of the whole product starts with the alert queries. Three rules that work well in practice:
-
-1. **Scope competitor alerts to the firm's own domain** (`site:`) — you want what they *publish*, not what journalists write about them.
-2. **One alert per firm per theme** and name the feed `Firm_Theme` — the `source` name drives grouping and the dashboard matrix.
-3. **Quote multi-word phrases.** Unquoted words explode the noise.
-
-**Competitor monitoring (one per firm × theme):**
-```
-site:mckinsey.com ("global business services" OR "shared services" OR "integrated business services")
-site:mckinsey.com ("agentic AI" OR "AI agents" OR "autonomous agents")
-site:bcg.com ("capability center" OR "GCC" OR "nearshoring")
-site:bain.com ("operating model" OR "service delivery model")
-site:deloitte.com ("finance transformation" OR "shared services" OR "GBS")
-site:accenture.com ("intelligent operations" OR "agentic" OR "managed services")
-```
-
-**Client monitoring (one per account × angle):**
-```
-"CompanyName" ("CFO" OR "chief financial officer" OR "finance transformation")
-"CompanyName" ("shared services" OR "capability center" OR "outsourcing")
-"CompanyName" ("restructuring" OR "cost reduction" OR "ERP" OR "S/4HANA")
-```
-
-Everything an alert returns still passes the pipeline's own filters: word-boundary keyword tagging (`tag_rules`), career/people-page exclusions, the stock-noise domain blocklist, and Claude's relevance scoring.
 
 ---
 
