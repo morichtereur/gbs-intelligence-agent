@@ -29,7 +29,7 @@ jobs:
           test -s output/DEMO/intelligence_explorer.html
           test -s output/DEMO/newsletter_full.html
           test -s output/DEMO/newsletter_block.txt
-          grep -q "Signal register" output/DEMO/intelligence_explorer.html
+          grep -q "Where competitors publish" output/DEMO/intelligence_explorer.html
           ! grep -q "{{" output/DEMO/newsletter_full.html
           echo "Demo build OK"
 
