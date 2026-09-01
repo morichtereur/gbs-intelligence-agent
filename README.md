@@ -220,6 +220,20 @@ Add `"CompanyName"` to `competitor_sources` or `client_sources`.
 export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 ```
 
+### Run a second configuration (e.g. for a team)
+One codebase, several instances: point each at its own config, database, and output folder — nothing in the code folder is shared state.
+
+```bash
+export INTEL_SOURCES_PATH="$HOME/intel-team/sources.json"
+export INTEL_DB_PATH="$HOME/intel-team/intel.db"
+export INTEL_OUT_ROOT="$HOME/intel-team/output"
+export INTEL_EDITION_FILE="$HOME/intel-team/edition.txt"
+export INTEL_RECIPIENTS="team-list@example.com"
+bash run_weekly.sh
+```
+
+Each instance gets its own feeds, watchlists, branding, recipients, and archive.
+
 ---
 
 ## Environment variables
@@ -232,6 +246,7 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 | `INTEL_RECIPIENTS` | — | Comma-separated recipients |
 | `INTEL_DB_PATH` | `intel.db` | SQLite database |
 | `INTEL_SOURCES_PATH` | `sources.json` | Feed and tagging configuration |
+| `INTEL_OUT_ROOT` | `output` | Root folder for editions and the archive |
 | `INTEL_FAIL_ON_FEED_ERROR` | `1` | Stop before delivery when a feed fails |
 | `INTEL_WINDOW_DAYS` | `7` | Newsletter lookback window |
 | `INTEL_MAX_AGE_DAYS` | `60` | Drop feed entries published longer ago than this (0 disables) |

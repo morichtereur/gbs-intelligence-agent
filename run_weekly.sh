@@ -75,7 +75,10 @@ if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
 fi
 
 # ---------- pipeline ----------
-mkdir -p output logs
+# INTEL_OUT_ROOT lets a second instance (e.g. a team configuration) keep
+# its database and editions outside the code folder.
+set_env_default INTEL_OUT_ROOT           "output"
+mkdir -p "$INTEL_OUT_ROOT" logs
 
 if [[ ! -f "$INTEL_SOURCES_PATH" ]]; then
   echo "[ERROR] Sources file not found: $INTEL_SOURCES_PATH"
@@ -93,7 +96,7 @@ export INTEL_EDITION="$EDITION"
 echo "[info] Edition: $EDITION"
 
 CW=$(date +%V); YEAR=$(date +%Y)
-export INTEL_OUT_DIR="output/CW_${YEAR}_${CW}"
+export INTEL_OUT_DIR="${INTEL_OUT_ROOT}/CW_${YEAR}_${CW}"
 
 run_step "1/6 Ingest feeds"         "intel_ingest_stdlib.py"
 run_step "2/6 Summarize new links"  "summarize_new_links.py"
