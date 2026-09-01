@@ -16,7 +16,16 @@
       "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
     },
     {
-      "_comment": "CLIENT FEEDS — track target companies for transformation signals",
+      "_comment": "ANALYST FEEDS — the research houses often publish more decision-relevant GBS material than the firms themselves. One alert per house, e.g. site:hfsresearch.com (\"GBS\" OR \"capability center\" OR \"agentic\")",
+      "source": "HFS_GBS",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "source": "Everest_GBS",
+      "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
+    },
+    {
+      "_comment": "TEAM WATCHLISTS — one block per colleague. Name feeds Client_Topic, add the company to client_sources, and note the owner here so the list stays maintained.",
       "source": "Client1_Finance",
       "url": "https://www.google.com/alerts/feeds/YOUR_GOOGLE_ID/YOUR_FEED_ID"
     },
@@ -28,12 +37,15 @@
 
   "competitor_sources": ["Firm1", "Firm2"],
 
+  "analyst_sources": ["HFS", "Everest", "SSON", "Gartner"],
+
   "client_sources": ["Client1"],
 
   "firm_clusters": {
     "MBB": ["McKinsey", "BCG", "Bain"],
     "Big4": ["Deloitte", "EY", "KPMG", "PwC"],
-    "Accenture": ["Accenture"]
+    "Accenture": ["Accenture"],
+    "Analysts": ["HFS", "Everest", "SSON", "Gartner"]
   },
 
   "firm_domains": {
@@ -45,7 +57,11 @@
     "EY": "ey.com",
     "KPMG": "kpmg.com",
     "PwC": "pwc.com",
-    "Accenture": "accenture.com"
+    "Accenture": "accenture.com",
+    "HFS": "hfsresearch.com",
+    "Everest": "everestgrp.com",
+    "SSON": "ssonetwork.com",
+    "Gartner": "gartner.com"
   },
 
   "blocked_domains": [

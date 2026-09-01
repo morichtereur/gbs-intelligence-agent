@@ -47,11 +47,12 @@ flowchart LR
 ```
 
 **Every Monday morning, automatically:**
-1. Ingest 50+ RSS feeds across competitor firms and client companies
-2. Filter noise up front — job posts, people profiles, stock trackers, blocked domains
+1. Ingest 50+ RSS feeds across competitor firms, analyst houses (HFS, Everest, SSON, Gartner), and client companies
+2. Filter noise up front — job posts, people profiles, stock trackers, stale resurfaced pages, blocked domains
 3. Score each article 1–3 for strategic relevance with Claude, using an advisory-lens prompt for client signals
 4. Render the email brief (highest-signal articles only) and the dashboard
-5. Send the brief by email and archive everything by calendar week
+5. Rebuild the browsable edition archive (`output/archive.html`)
+6. Send the brief by email — every edition stays archived by calendar week
 
 ---
 
@@ -74,7 +75,11 @@ Client signals stay in the email brief; the dashboard deliberately keeps only th
 
 <img src="docs/newsletter.png" width="420" alt="Weekly newsletter">
 
-Inline-styled HTML email (renders in Outlook/Gmail), grouped by firm, high-relevance signals only, with a separate client-signals section and plain-text fallback.
+Inline-styled HTML email (renders in Outlook/Gmail), grouped by firm, high-relevance signals only, with a separate client-signals section, a one-click feedback link in the footer (set `INTEL_FEEDBACK_EMAIL`), and plain-text fallback.
+
+### Edition archive
+
+`output/archive.html` — an index of every past edition (week, signal counts, links to that week's dashboard and email), rebuilt on every run. Drop the whole `output/` folder on a shared drive and the team can browse back through the quarter.
 
 ---
 
@@ -241,6 +246,7 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 | `INTEL_OWNER_NAME` / `_TITLE` / `_EMAIL` | — | Dashboard footer identity (hidden if unset) |
 | `INTEL_ORG_NAME` | `GBS Intelligence Agent` | Newsletter header |
 | `INTEL_CONTACT_NAME` / `_ROLE` / `_EMAIL` | — | Newsletter contact card (hidden if unset) |
+| `INTEL_FEEDBACK_EMAIL` | contact email | Address behind the newsletter's feedback link (hidden if unset) |
 | `INTEL_PHOTO_PATH` | `photo.jpg` | Footer photo path |
 | `INTEL_DEMO_LABEL` | — | Adds a badge to the masthead (used by `demo.py`) |
 

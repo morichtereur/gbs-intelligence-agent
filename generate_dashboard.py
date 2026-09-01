@@ -34,7 +34,7 @@ TAG_LABELS = {
     "Operating_Model": "Operating model",
     "Analyst_Research": "Analyst research",
 }
-CLUSTER_ORDER = ["MBB", "Big4", "Accenture", "Other"]
+CLUSTER_ORDER = ["MBB", "Big4", "Accenture", "Analysts", "Other"]
 
 # Firm logos are rendered as favicons from the firm's own domain.
 # Extend or override via a "firm_domains" object in sources.json.
@@ -47,6 +47,10 @@ FIRM_DOMAINS = {
     "kpmg": "kpmg.com",
     "pwc": "pwc.com",
     "accenture": "accenture.com",
+    "hfs": "hfsresearch.com",
+    "everest": "everestgrp.com",
+    "sson": "ssonetwork.com",
+    "gartner": "gartner.com",
 }
 
 # Domains whose favicon the icon services don't have — embed their icon
@@ -106,7 +110,7 @@ def fetch_all_signals() -> list[dict]:
         FROM articles a
         LEFT JOIN article_summaries s ON s.article_id = a.article_id
         WHERE a.created_at >= ?
-          AND COALESCE(a.feed_type, 'competitor') = 'competitor'
+          AND COALESCE(a.feed_type, 'competitor') IN ('competitor', 'analyst')
           AND COALESCE(s.bullets, '') != ''
           AND UPPER(COALESCE(s.bullets, '')) NOT LIKE 'SKIP%'
         ORDER BY s.relevance_score DESC, a.created_at DESC
@@ -203,8 +207,8 @@ def embed_photo() -> str:
 # ---------------------------------------------------------------- aggregates
 
 def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
-    """Competitor signals only: rows = firms (grouped by cluster), cols = themes."""
-    comp = [s for s in signals if s["feed_type"] == "competitor"]
+    """Competitor and analyst signals: rows = firms (grouped by cluster), cols = themes."""
+    comp = [s for s in signals if s["feed_type"] in ("competitor", "analyst")]
     col_counter: Counter[str] = Counter(t for s in comp for t in s["tags"])
     columns = [t for t in TAG_LABELS if t in col_counter]
 

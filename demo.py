@@ -95,6 +95,7 @@ def main() -> None:
         "INTEL_EDITION": "17",
         "INTEL_DEMO_LABEL": "Demo data",
         "INTEL_ORG_NAME": "GBS Intelligence Agent — Demo",
+        "INTEL_FEEDBACK_EMAIL": "feedback@example.com",
     }
 
     run_stage("generate_dashboard.py", env)

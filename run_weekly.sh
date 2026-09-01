@@ -95,11 +95,12 @@ echo "[info] Edition: $EDITION"
 CW=$(date +%V); YEAR=$(date +%Y)
 export INTEL_OUT_DIR="output/CW_${YEAR}_${CW}"
 
-run_step "1/5 Ingest feeds"         "intel_ingest_stdlib.py"
-run_step "2/5 Summarize new links"  "summarize_new_links.py"
-run_step "3/5 Write newsletter"     "weekly_newsletter_output.py"
-run_step "4/5 Build explorer"       "generate_dashboard.py"
-run_step "5/5 Send newsletter"      "send_newsletter.py"
+run_step "1/6 Ingest feeds"         "intel_ingest_stdlib.py"
+run_step "2/6 Summarize new links"  "summarize_new_links.py"
+run_step "3/6 Write newsletter"     "weekly_newsletter_output.py"
+run_step "4/6 Build explorer"       "generate_dashboard.py"
+run_step "5/6 Build archive"        "generate_archive.py"
+run_step "6/6 Send newsletter"      "send_newsletter.py"
 
 python3 edition_counter.py --commit "$EDITION"
 echo "[OK] Edition $EDITION committed"

@@ -23,6 +23,7 @@ ORG_NAME = os.getenv("INTEL_ORG_NAME", "GBS Intelligence Agent")
 CONTACT_NAME = os.getenv("INTEL_CONTACT_NAME", "")
 CONTACT_ROLE = os.getenv("INTEL_CONTACT_ROLE", "")
 CONTACT_EMAIL = os.getenv("INTEL_CONTACT_EMAIL", os.getenv("GMAIL_USER", ""))
+FEEDBACK_EMAIL = os.getenv("INTEL_FEEDBACK_EMAIL", CONTACT_EMAIL).strip()
 
 SUMMARY_MAX_CHARS = 380
 FALLBACK_SUMMARY = "No AI summary available. Please open the source for details."
@@ -213,14 +214,24 @@ def render_html(template: str, competitor_html: str, client_section_html: str) -
     out = out.replace("{{ARTICLES_HTML}}", competitor_html)
     out = out.replace("{{EY_HTML}}", "")
 
+    def drop_block(html: str, start_marker: str, end_marker: str) -> str:
+        start = html.find(start_marker)
+        end = html.find(end_marker)
+        if start != -1 and end != -1:
+            return html[:start] + html[end + len(end_marker):]
+        return html
+
     # Drop the contact card entirely when no contact is configured.
     if not CONTACT_NAME and not CONTACT_EMAIL:
-        start_marker = "<!-- CONTACT_BLOCK_START -->"
-        end_marker = "<!-- CONTACT_BLOCK_END -->"
-        start = out.find(start_marker)
-        end = out.find(end_marker)
-        if start != -1 and end != -1:
-            out = out[:start] + out[end + len(end_marker):]
+        out = drop_block(out, "<!-- CONTACT_BLOCK_START -->", "<!-- CONTACT_BLOCK_END -->")
+
+    # Feedback link — drop it when there is no address to receive replies.
+    if FEEDBACK_EMAIL and "@" in FEEDBACK_EMAIL:
+        from urllib.parse import quote
+        subject = quote(f"Intelligence brief feedback — Edition {EDITION}")
+        out = out.replace("{{FEEDBACK_MAILTO}}", f"mailto:{escape(FEEDBACK_EMAIL)}?subject={subject}")
+    else:
+        out = drop_block(out, "<!-- FEEDBACK_START -->", "<!-- FEEDBACK_END -->")
 
     if client_section_html:
         out = out.replace(

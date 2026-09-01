@@ -24,11 +24,15 @@ jobs:
       - name: Build demo (no API key needed)
         run: python demo.py
 
+      - name: Build archive
+        run: python generate_archive.py
+
       - name: Assert outputs exist
         run: |
           test -s output/DEMO/intelligence_explorer.html
           test -s output/DEMO/newsletter_full.html
           test -s output/DEMO/newsletter_block.txt
+          test -s output/archive.html
           grep -q "Where competitors publish" output/DEMO/intelligence_explorer.html
           ! grep -q "{{" output/DEMO/newsletter_full.html
           echo "Demo build OK"
