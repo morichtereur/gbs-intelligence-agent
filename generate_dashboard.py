@@ -1,16 +1,42 @@
-# generate_dashboard.py — TLCA Intelligence Explorer v2
+# generate_dashboard.py — Intelligence Explorer v3 (consulting-exhibit edition)
 from __future__ import annotations
 
 import json
 import os
 import sqlite3
+from collections import Counter
 from datetime import datetime, timedelta, timezone
+from html import escape
 from pathlib import Path
 
 DB_PATH = os.getenv("INTEL_DB_PATH", "intel.db")
 SOURCES_PATH = os.getenv("INTEL_SOURCES_PATH", "sources.json")
 OUT_DIR = Path(os.getenv("INTEL_OUT_DIR", "output"))
 WINDOW_WEEKS = int(os.getenv("INTEL_DASHBOARD_WEEKS", "4"))
+EDITION = os.getenv("INTEL_EDITION", "")
+
+# Branding — all optional, so the public repo ships with neutral defaults.
+BRAND = os.getenv("INTEL_BRAND", "Competitor & Client Intelligence")
+OWNER_NAME = os.getenv("INTEL_OWNER_NAME", "").strip()
+OWNER_TITLE = os.getenv("INTEL_OWNER_TITLE", "").strip()
+OWNER_EMAIL = os.getenv("INTEL_OWNER_EMAIL", "").strip()
+DEMO_LABEL = os.getenv("INTEL_DEMO_LABEL", "").strip()
+
+TAG_LABELS = {
+    "GBS": "GBS",
+    "GCC": "GCC",
+    "Agentic_AI": "Agentic AI",
+    "Operating_Model": "Operating model",
+    "Analyst_Research": "Analyst research",
+}
+CLUSTER_ORDER = ["MBB", "Big4", "Accenture", "Other"]
+
+# Sequential single-hue ramp (light -> dark) for the firm x theme matrix.
+HEAT_RAMP = ["#F1F5FA", "#D9E4F0", "#B3C9E1", "#82A6CB", "#4F7BAA", "#27568C"]
+
+
+def tag_label(tag: str) -> str:
+    return TAG_LABELS.get(tag, tag.replace("_", " "))
 
 
 def fetch_all_signals() -> list[dict]:
@@ -60,11 +86,13 @@ def fetch_all_signals() -> list[dict]:
 
         try:
             dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-            cw = f"CW {dt.strftime('%V')} ({dt.strftime('%b %d')})"
-            week_label = f"Week {dt.strftime('%V')}"
+            cw = f"CW {dt.strftime('%V')}"
+            week_label = f"CW {dt.strftime('%V')}"
+            week_sort = dt.strftime("%G-%V")
         except Exception:
-            cw = "Unknown"
-            week_label = "Unknown"
+            cw = "—"
+            week_label = "—"
+            week_sort = ""
 
         tag_list = [t.strip() for t in tags.split(",") if t.strip() and t.strip() != "Client_Signal"]
         cluster = company_to_cluster.get(company.lower(), "Other")
@@ -80,6 +108,7 @@ def fetch_all_signals() -> list[dict]:
             "created_at": created_at,
             "cw": cw,
             "week_label": week_label,
+            "week_sort": week_sort,
             "summary": summary,
             "score": int(score),
             "cluster": cluster,
@@ -89,7 +118,7 @@ def fetch_all_signals() -> list[dict]:
 
 
 def embed_photo() -> str:
-    """Embed photo.jpg as base64 img tag, or return placeholder div."""
+    """Embed photo.jpg as base64 img tag, or return empty string."""
     import base64
     photo_path = Path(os.getenv("INTEL_PHOTO_PATH", "photo.jpg"))
     if photo_path.exists():
@@ -97,750 +126,979 @@ def embed_photo() -> str:
             img_b64 = base64.b64encode(pf.read()).decode("utf-8")
         ext = photo_path.suffix.lower().replace(".", "")
         mime = "jpeg" if ext in ("jpg", "jpeg") else ext
-        return f'<img src="data:image/{mime};base64,{img_b64}" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid #2E2E42;">'
-    return '<div style="width:44px; height:44px; border-radius:50%; background:#252535; border:2px solid #2E2E42;"></div>'
+        return (
+            f'<img src="data:image/{mime};base64,{img_b64}" '
+            f'style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:1px solid #D9DAD5;" alt="">'
+        )
+    return ""
+
+
+# ---------------------------------------------------------------- aggregates
+
+def week_series(signals: list[dict]) -> list[dict]:
+    """Every ISO week touched by the window (oldest first) with competitor/client counts."""
+    now = datetime.now(timezone.utc)
+    weeks: list[dict] = []
+    seen: set[str] = set()
+    for days_back in range(WINDOW_WEEKS * 7, -1, -1):
+        d = now - timedelta(days=days_back)
+        key = d.strftime("%G-%V")
+        if key in seen:
+            continue
+        seen.add(key)
+        weeks.append({"key": key, "label": f"CW {d.strftime('%V')}", "competitor": 0, "client": 0})
+    by_key = {w["key"]: w for w in weeks}
+    for s in signals:
+        w = by_key.get(s["week_sort"])
+        if w is None:
+            continue
+        if s["feed_type"] == "client":
+            w["client"] += 1
+        else:
+            w["competitor"] += 1
+    return weeks
+
+
+def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
+    """Competitor signals only: rows = firms (grouped by cluster), cols = themes."""
+    comp = [s for s in signals if s["feed_type"] == "competitor"]
+    col_counter: Counter[str] = Counter(t for s in comp for t in s["tags"])
+    columns = [t for t in TAG_LABELS if t in col_counter]
+
+    cells: dict[str, Counter] = {}
+    clusters: dict[str, str] = {}
+    for s in comp:
+        firm = s["company"]
+        clusters[firm] = s["cluster"]
+        c = cells.setdefault(firm, Counter())
+        for t in s["tags"]:
+            if t in columns:
+                c[t] += 1
+
+    rows = []
+    for firm, counter in cells.items():
+        rows.append({
+            "firm": firm,
+            "cluster": clusters.get(firm, "Other"),
+            "counts": [counter.get(t, 0) for t in columns],
+            "total": sum(counter.get(t, 0) for t in columns),
+        })
+    rows.sort(key=lambda r: (
+        CLUSTER_ORDER.index(r["cluster"]) if r["cluster"] in CLUSTER_ORDER else len(CLUSTER_ORDER),
+        -r["total"],
+        r["firm"],
+    ))
+    return columns, rows
+
+
+def compute_headline(signals: list[dict]) -> tuple[str, str]:
+    """Answer-first action title + supporting deck line, derived purely from the data."""
+    if not signals:
+        return (
+            "No new signals in the reporting window",
+            "The pipeline ran, but no articles cleared the relevance filters. "
+            "Check feed configuration or widen the window.",
+        )
+
+    comp = [s for s in signals if s["feed_type"] == "competitor"]
+    clients = [s for s in signals if s["feed_type"] == "client"]
+    high = sum(1 for s in signals if s["score"] == 3)
+    n_orgs = len({s["company"] for s in signals})
+
+    deck = (
+        f"{len(signals)} signals from {n_orgs} organisations in the last {WINDOW_WEEKS * 7} days — "
+        f"{high} rated high relevance, {len(clients)} from client accounts."
+    )
+
+    if comp:
+        theme_counts = Counter(t for s in comp for t in s["tags"])
+        firm_counts = Counter(s["company"] for s in comp)
+        if theme_counts:
+            top_theme, _ = theme_counts.most_common(1)[0]
+            top_firm, n_firm = firm_counts.most_common(1)[0]
+            headline = (
+                f"{tag_label(top_theme)} leads competitor publishing; "
+                f"{top_firm} most active with {n_firm} signal{'s' if n_firm != 1 else ''}"
+            )
+            return headline, deck
+        top_firm, n_firm = firm_counts.most_common(1)[0]
+        return f"{top_firm} drives competitor activity with {n_firm} signal{'s' if n_firm != 1 else ''}", deck
+
+    return f"{len(clients)} client signal{'s' if len(clients) != 1 else ''} flagged this period", deck
+
+
+# ---------------------------------------------------------------- rendering
+
+def render_kpis(signals: list[dict]) -> str:
+    comp = [s for s in signals if s["feed_type"] == "competitor"]
+    high = sum(1 for s in signals if s["score"] == 3)
+    n_orgs = len({s["company"] for s in signals})
+    firm_counts = Counter(s["company"] for s in comp)
+    top_firm = firm_counts.most_common(1)[0][0] if firm_counts else "—"
+
+    tiles = [
+        (str(len(signals)), "signals captured"),
+        (str(high), "high relevance (★)"),
+        (str(n_orgs), "organisations tracked"),
+        (top_firm, "most active firm"),
+    ]
+    out = []
+    for value, label in tiles:
+        out.append(
+            f'<div class="kpi"><div class="kpi-value">{escape(value)}</div>'
+            f'<div class="kpi-label">{escape(label)}</div></div>'
+        )
+    return "\n".join(out)
+
+
+def render_week_bars(weeks: list[dict]) -> str:
+    max_count = max([w["competitor"] for w in weeks] + [w["client"] for w in weeks] + [1])
+    groups = []
+    for w in weeks:
+        bars = []
+        for series, cls in (("competitor", "bar-comp"), ("client", "bar-client")):
+            count = w[series]
+            h = round(count / max_count * 120) if count else 2
+            label = f'<span class="bar-value">{count}</span>' if count else ""
+            bars.append(
+                f'<div class="bar {cls}" style="height:{h}px" '
+                f'data-tip="{escape(w["label"])}: {count} {series} signal{"s" if count != 1 else ""}">{label}</div>'
+            )
+        groups.append(
+            f'<div class="bar-group"><div class="bars">{"".join(bars)}</div>'
+            f'<div class="bar-week">{escape(w["label"])}</div></div>'
+        )
+    return "\n".join(groups)
+
+
+def render_matrix(columns: list[str], rows: list[dict]) -> str:
+    if not rows:
+        return '<div class="empty-note">No competitor signals in the window.</div>'
+
+    max_cell = max((max(r["counts"]) for r in rows if r["counts"]), default=1) or 1
+
+    head = "".join(f'<th class="mx-col">{escape(tag_label(c))}</th>' for c in columns)
+    body_rows = []
+    prev_cluster = None
+    for r in rows:
+        cluster_cell = ""
+        if r["cluster"] != prev_cluster:
+            span = sum(1 for x in rows if x["cluster"] == r["cluster"])
+            cluster_cell = f'<td class="mx-cluster" rowspan="{span}">{escape(r["cluster"])}</td>'
+            prev_cluster = r["cluster"]
+        cells = []
+        for c in r["counts"]:
+            if c == 0:
+                cells.append('<td class="mx-cell mx-zero">·</td>')
+            else:
+                step = min(len(HEAT_RAMP) - 1, max(1, round(c / max_cell * (len(HEAT_RAMP) - 1))))
+                color = HEAT_RAMP[step]
+                ink = "#FFFFFF" if step >= 3 else "#1A1E26"
+                cells.append(f'<td class="mx-cell" style="background:{color}; color:{ink};">{c}</td>')
+        body_rows.append(
+            f'<tr>{cluster_cell}<td class="mx-firm">{escape(r["firm"])}</td>'
+            f'{"".join(cells)}<td class="mx-total">{r["total"]}</td></tr>'
+        )
+    return (
+        '<table class="matrix"><thead><tr><th></th><th></th>'
+        + head + '<th class="mx-col">Total</th></tr></thead><tbody>'
+        + "".join(body_rows) + "</tbody></table>"
+    )
+
+
+def render_footer() -> str:
+    if OWNER_NAME:
+        photo = embed_photo()
+        title_html = f'<div class="foot-role">{escape(OWNER_TITLE)}</div>' if OWNER_TITLE else ""
+        email_html = (
+            f'<a class="foot-mail" href="mailto:{escape(OWNER_EMAIL)}">{escape(OWNER_EMAIL)}</a>'
+            if OWNER_EMAIL else ""
+        )
+        return (
+            f'<div class="foot-owner">{photo}<div>'
+            f'<div class="foot-name">{escape(OWNER_NAME)}</div>{title_html}{email_html}</div></div>'
+        )
+    return (
+        '<div class="foot-name">Generated by the '
+        '<a class="foot-mail" href="https://github.com/morichtereur/gbs-intelligence-agent">GBS Intelligence Agent</a></div>'
+    )
 
 
 def build_html(signals: list[dict]) -> str:
     # Prevent article content from closing the inline script tag.
     signals_json = json.dumps(signals, ensure_ascii=False).replace("<", "\\u003c")
-    all_tags = sorted(set(t for s in signals for t in s["tags"]))
-    all_weeks = sorted(set(s["week_label"] for s in signals), reverse=True)
+
+    headline, deck = compute_headline(signals)
+    weeks = week_series(signals)
+    columns, mx_rows = firm_theme_matrix(signals)
+
+    all_tags = sorted({t for s in signals for t in s["tags"]})
+    all_weeks = sorted({s["week_label"] for s in signals if s["week_label"] != "—"}, reverse=True)
     now = datetime.now(timezone.utc).strftime("%d %B %Y")
-    photo_html = embed_photo()
-    photo_html_footer = f'''<div style="padding:20px 40px; border-top:1px solid #252535; display:flex; align-items:center; justify-content:space-between; background:#15151C;">
-  <div style="display:flex; align-items:center; gap:14px;">
-    {photo_html}
-    <div>
-      <div style="font-size:13px; font-weight:600; color:#EEEEF5;">Your Name</div>
-      <div style="font-size:11px; color:#7070A0; margin-top:2px;">Consultant &middot; Business Consulting Finance &middot; EY Z&uuml;rich</div>
-      <a href="mailto:your@email.com" style="font-size:11px; color:#FFC72C; text-decoration:none;">your@email.com</a>
-    </div>
-  </div>
-  <div style="font-size:10px; color:#353550; text-align:right;">TLCA Intelligence Explorer<br>Built &amp; maintained by Your Name</div>
-</div>'''
+    edition_html = f"Edition {escape(EDITION)} · " if EDITION else ""
+    demo_chip = f'<span class="demo-chip">{escape(DEMO_LABEL)}</span>' if DEMO_LABEL else ""
 
-
-    tag_pills_html = "\n".join(
-        f'<div class="pill" data-filter="tag" data-value="{t}">'
-        f'<span class="pill-dot" data-tag="{t}"></span>{t.replace("_", " ")}</div>'
+    tag_pills = "\n".join(
+        f'<button class="pill" data-filter="tag" data-value="{escape(t)}">{escape(tag_label(t))}</button>'
         for t in all_tags
     )
-    week_pills_html = "\n".join(
-        f'<div class="pill" data-filter="week" data-value="{w}">{w}</div>'
+    week_pills = "\n".join(
+        f'<button class="pill" data-filter="week" data-value="{escape(w)}">{escape(w)}</button>'
         for w in all_weeks
     )
 
-    return f"""<!doctype html>
+    html = HTML_TEMPLATE
+    replacements = {
+        "__BRAND__": escape(BRAND),
+        "__EDITION__": edition_html,
+        "__DEMO_CHIP__": demo_chip,
+        "__DATE__": now,
+        "__WINDOW_DAYS__": str(WINDOW_WEEKS * 7),
+        "__HEADLINE__": escape(headline),
+        "__DECK__": escape(deck),
+        "__KPIS__": render_kpis(signals),
+        "__WEEK_BARS__": render_week_bars(weeks),
+        "__MATRIX__": render_matrix(columns, mx_rows),
+        "__TAG_PILLS__": tag_pills,
+        "__WEEK_PILLS__": week_pills,
+        "__FOOTER_IDENTITY__": render_footer(),
+        "__SIGNALS_JSON__": signals_json,
+    }
+    for token, value in replacements.items():
+        html = html.replace(token, value)
+    return html
+
+
+HTML_TEMPLATE = r"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TLCA Intelligence Explorer</title>
+  <title>Intelligence Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root {{
-      --bg: #0D0D12;
-      --surface: #15151C;
-      --surface2: #1C1C26;
-      --surface3: #222230;
-      --border: #252535;
-      --border2: #2E2E42;
-      --accent: #FFC72C;
-      --accent-dim: rgba(255,199,44,0.12);
-      --text: #EEEEF5;
-      --text-muted: #7070A0;
-      --text-dim: #353550;
-      --competitor: #4A9EFF;
-      --client: #00C9A7;
-      --tag-gbs: #FF6B6B;
-      --tag-gcc: #4A9EFF;
-      --tag-ai: #A78BFA;
-      --tag-om: #F59E0B;
-      --tag-default: #6B7280;
-      --modal-bg: rgba(8,8,14,0.92);
-    }}
+    :root {
+      --stock: #F4F4F1;
+      --paper: #FFFFFF;
+      --ink: #1A1E26;
+      --ink-2: #4C5361;
+      --ink-3: #8A8F9C;
+      --rule: #D9DAD5;
+      --rule-soft: #E8E9E4;
+      --accent: #27568C;
+      --accent-soft: #EAF0F7;
+      --client: #0E9F6E;
+      --client-soft: #E7F5EF;
+      --serif: 'Source Serif 4', Georgia, serif;
+      --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+      --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    }
 
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {{
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+    html { background: var(--stock); }
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      line-height: 1.5;
+      background: var(--stock);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 1060px;
+      margin: 0 auto;
+      background: var(--paper);
       min-height: 100vh;
-      overflow-x: hidden;
-    }}
+      border-left: 1px solid var(--rule);
+      border-right: 1px solid var(--rule);
+    }
 
-    /* ── HEADER ── */
-    .header {{
-      padding: 24px 40px 20px;
-      border-bottom: 1px solid var(--border);
+    /* ── Masthead ── */
+    .masthead {
+      padding: 26px 48px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .masthead-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-3);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .demo-chip {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--accent);
+      padding: 2px 8px;
+      border-radius: 2px;
+      margin-left: 10px;
+      vertical-align: 2px;
+    }
+
+    /* ── Headline (the answer) ── */
+    .lede {
+      padding: 14px 48px 26px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .lede h1 {
+      font-family: var(--serif);
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: -0.4px;
+      max-width: 21em;
+    }
+    .lede .deck {
+      margin-top: 10px;
+      font-size: 15px;
+      color: var(--ink-2);
+      max-width: 46em;
+    }
+
+    /* ── KPI strip ── */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--rule);
+    }
+    .kpi {
+      padding: 18px 24px 16px;
+      border-right: 1px solid var(--rule-soft);
+    }
+    .kpi:first-child { padding-left: 48px; }
+    .kpi:last-child { border-right: none; }
+    .kpi-value {
+      font-family: var(--serif);
+      font-size: 30px;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .kpi-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 5px;
+    }
+
+    /* ── Exhibits ── */
+    .exhibits {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .exhibit {
+      padding: 24px 32px 26px 48px;
+      min-width: 0;
+    }
+    .exhibit + .exhibit {
+      border-left: 1px solid var(--rule-soft);
+      padding-left: 32px;
+      padding-right: 48px;
+    }
+    .exhibit-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .exhibit-title {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 600;
+      margin-top: 4px;
+      margin-bottom: 18px;
+    }
+
+    /* Exhibit 1: bars */
+    .chart {
       display: flex;
       align-items: flex-end;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      background: rgba(13,13,18,0.95);
-      backdrop-filter: blur(16px);
-      z-index: 90;
-    }}
-
-    .header h1 {{
-      font-family: 'DM Serif Display', serif;
-      font-size: 24px;
-      font-weight: 400;
-      letter-spacing: -0.3px;
-    }}
-
-    .header h1 .hl {{ color: var(--accent); }}
-    .header-sub {{ font-size: 11px; color: var(--text-muted); margin-top: 3px; font-weight: 300; }}
-
-    .badge {{
-      font-size: 11px;
-      color: var(--text-muted);
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      padding: 5px 12px;
-      border-radius: 20px;
-    }}
-    .badge b {{ color: var(--accent); }}
-
-    /* ── FILTERS ── */
-    .filters {{
-      padding: 16px 40px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      background: var(--surface);
-    }}
-
-    .filter-group {{ display: flex; flex-direction: column; gap: 7px; }}
-
-    .filter-label {{
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--text-dim);
-    }}
-
-    .filter-pills {{ display: flex; gap: 5px; flex-wrap: wrap; }}
-
-    .pill {{
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 11px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 500;
-      cursor: pointer;
-      border: 1px solid var(--border2);
-      background: var(--surface2);
-      color: var(--text-muted);
-      transition: all 0.12s ease;
-      user-select: none;
-    }}
-
-    .pill:hover {{ border-color: var(--accent); color: var(--text); }}
-    .pill.active {{ background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }}
-
-    .pill-dot {{
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }}
-
-    .search-wrap {{ flex: 1; min-width: 220px; }}
-
-    .search-input {{
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: 8px;
-      padding: 7px 14px;
-      font-size: 12px;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      outline: none;
-      transition: border-color 0.12s;
-    }}
-    .search-input:focus {{ border-color: var(--accent); }}
-    .search-input::placeholder {{ color: var(--text-dim); }}
-
-    /* ── STATS BAR ── */
-    .stats-bar {{
-      padding: 10px 40px;
-      display: flex;
-      gap: 28px;
-      border-bottom: 1px solid var(--border);
-      align-items: center;
-    }}
-
-    .stat {{ display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--text-muted); }}
-    .stat-num {{ font-size: 20px; font-weight: 600; color: var(--text); font-family: 'DM Serif Display', serif; line-height: 1; }}
-    .stat-dot {{ width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 2px; }}
-
-    .kbd-hint {{
-      margin-left: auto;
-      font-size: 10px;
-      color: var(--text-dim);
-      display: flex;
-      gap: 10px;
-    }}
-    .kbd {{
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-family: monospace;
-      color: var(--text-muted);
-    }}
-
-    /* ── GRID ── */
-    .grid {{
-      padding: 28px 40px 60px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 14px;
-      align-items: start;
-    }}
-
-    /* ── SECTION DIVIDER ── */
-    .section-divider {{
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 0 2px;
-    }}
-    .section-divider-label {{
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px;
-      white-space: nowrap;
-    }}
-    .section-divider-line {{ flex: 1; height: 1px; background: var(--border); }}
-
-    /* ── CARD ── */
-    .card {{
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      opacity: 0;
-      animation: fadeUp 0.25s ease forwards;
-    }}
-
-    @keyframes fadeUp {{
-      from {{ opacity: 0; transform: translateY(10px); }}
-      to {{ opacity: 1; transform: translateY(0); }}
-    }}
-
-    .card:hover {{
-      border-color: var(--border2);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-    }}
-
-    .card:hover .card-title {{ color: var(--accent); }}
-
-    .card-header {{
-      padding: 11px 14px 9px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }}
-
-    .card-company {{
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.9px;
-    }}
-    .card-company.competitor {{ color: var(--competitor); }}
-    .card-company.client {{ color: var(--client); }}
-
-    .card-right {{ display: flex; align-items: center; gap: 6px; }}
-
-    .card-topic {{
-      font-size: 9px; color: var(--text-muted);
-      background: var(--surface3); padding: 2px 6px; border-radius: 8px;
-    }}
-    .card-cw {{ font-size: 9px; color: var(--text-dim); }}
-
-    .card-body {{ padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 8px; }}
-
-    .card-title {{
-      font-size: 13px; font-weight: 600;
-      line-height: 1.45; color: var(--text);
-      transition: color 0.12s;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }}
-
-    .card-summary {{
-      font-size: 11px; line-height: 1.65;
-      color: var(--text-muted); font-weight: 300;
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }}
-
-    .card-tags {{ display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }}
-
-    .tag {{
-      font-size: 9px; padding: 2px 7px;
-      border-radius: 8px; font-weight: 600;
-      letter-spacing: 0.3px;
-    }}
-
-    .card-footer {{
-      padding: 8px 14px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }}
-
-    .read-btn {{
-      display: inline-block; padding: 6px 12px;
-      background: var(--accent); color: #000;
-      font-size: 10px; font-weight: 700;
-      border-radius: 5px; text-decoration: none;
-      transition: opacity 0.12s;
-    }}
-    .read-btn:hover {{ opacity: 0.85; }}
-
-    .expand-hint {{
-      font-size: 10px; color: var(--text-dim);
-    }}
-
-    /* ── EMPTY ── */
-    .empty {{
-      grid-column: 1 / -1; text-align: center;
-      padding: 80px; color: var(--text-muted);
-    }}
-    .empty h3 {{
-      font-family: 'DM Serif Display', serif;
-      font-size: 22px; color: var(--text-dim); margin-bottom: 6px;
-    }}
-
-    /* ── MODAL ── */
-    .modal-overlay {{
-      display: none;
-      position: fixed; inset: 0;
-      background: var(--modal-bg);
-      z-index: 200;
-      backdrop-filter: blur(8px);
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-    }}
-    .modal-overlay.open {{ display: flex; }}
-
-    .modal {{
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: 14px;
-      max-width: 680px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      animation: modalIn 0.2s ease;
+      gap: 22px;
+      height: 160px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .bar-group { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .bars { display: flex; align-items: flex-end; gap: 3px; flex: 1; }
+    .bar {
+      width: 26px;
+      border-radius: 3px 3px 0 0;
       position: relative;
-    }}
-
-    @keyframes modalIn {{
-      from {{ opacity: 0; transform: scale(0.96) translateY(8px); }}
-      to {{ opacity: 1; transform: scale(1) translateY(0); }}
-    }}
-
-    .modal-header {{
-      padding: 20px 24px 16px;
-      border-bottom: 1px solid var(--border);
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
+      justify-content: center;
+    }
+    .bar-comp { background: var(--accent); }
+    .bar-client { background: var(--client); }
+    .bar-value {
+      position: absolute;
+      top: -18px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-2);
+    }
+    .bar-week {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: center;
+      margin-top: 7px;
+    }
+    .legend { display: flex; gap: 18px; margin-top: 12px; }
+    .legend-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--ink-2);
+    }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Exhibit 2: matrix */
+    .matrix-scroll { overflow-x: auto; }
+    .matrix { border-collapse: separate; border-spacing: 2px; width: 100%; }
+    .matrix th {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      font-weight: 500;
+      text-align: center;
+      padding: 0 6px 6px;
+      white-space: nowrap;
+    }
+    .mx-cluster {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      vertical-align: top;
+      padding: 5px 10px 0 0;
+      white-space: nowrap;
+    }
+    .mx-firm {
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+    .mx-cell {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      text-align: center;
+      min-width: 44px;
+      padding: 5px 0;
+      border-radius: 2px;
+    }
+    .mx-zero { color: var(--rule); background: transparent; }
+    .mx-total {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      text-align: center;
+      color: var(--ink-2);
+      padding: 5px 0 5px 8px;
+    }
+    .exhibit-note {
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-top: 12px;
+    }
+
+    /* ── Register ── */
+    .register-head {
+      padding: 26px 48px 0;
+    }
+    .register-head h2 {
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 600;
+    }
+    .register-sub { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+
+    .filters {
+      padding: 16px 48px 14px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--rule);
       position: sticky;
       top: 0;
-      background: var(--surface);
-      z-index: 1;
-    }}
-
-    .modal-company {{
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 6px;
-    }}
-    .modal-company.competitor {{ color: var(--competitor); }}
-    .modal-company.client {{ color: var(--client); }}
-
-    .modal-title {{
-      font-family: 'DM Serif Display', serif;
-      font-size: 20px; line-height: 1.35;
-      color: var(--text); font-weight: 400;
-    }}
-
-    .modal-close {{
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: 6px;
-      color: var(--text-muted);
-      font-size: 16px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-label {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .filter-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pill {
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 4px 11px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--paper);
+      color: var(--ink-2);
       cursor: pointer;
-      width: 32px; height: 32px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.12s;
-    }}
-    .modal-close:hover {{ color: var(--text); border-color: var(--accent); }}
+      transition: all 0.1s ease;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper);
+    }
+    .search-wrap { flex: 1; min-width: 200px; }
+    .search-input {
+      width: 100%;
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 6px 12px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .kbd-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-3);
+      margin-left: auto;
+      align-self: center;
+      white-space: nowrap;
+    }
+    .kbd {
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 1px 5px;
+      background: var(--stock);
+    }
 
-    .modal-body {{ padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }}
+    .register { padding: 6px 48px 40px; }
 
-    .modal-meta {{
-      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-    }}
-    .modal-meta-item {{
-      font-size: 11px; color: var(--text-muted);
-      background: var(--surface2); border: 1px solid var(--border);
-      padding: 3px 9px; border-radius: 10px;
-    }}
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 20px 0 8px;
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .section-label .count { color: var(--ink-3); letter-spacing: 0.5px; }
+    .sec-comp { color: var(--accent); }
+    .sec-client { color: var(--client); }
 
-    .modal-summary {{
-      font-size: 14px; line-height: 1.7;
-      color: var(--text-muted); font-weight: 300;
-      border-left: 2px solid var(--accent);
-      padding-left: 16px;
-    }}
+    .row {
+      border-bottom: 1px solid var(--rule-soft);
+      cursor: pointer;
+    }
+    .row-line {
+      display: grid;
+      grid-template-columns: 64px 168px 1fr 56px;
+      gap: 14px;
+      align-items: baseline;
+      padding: 11px 0;
+    }
+    .row:hover .row-title { color: var(--accent); }
 
-    .modal-tags {{ display: flex; gap: 5px; flex-wrap: wrap; }}
+    .score {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-align: center;
+      padding: 2px 0;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+    .score-3 { background: var(--accent); color: var(--paper); }
+    .score-2 { background: var(--accent-soft); color: var(--accent); }
+    .score-1 { background: var(--stock); color: var(--ink-3); }
 
-    .modal-actions {{ display: flex; gap: 10px; }}
+    .row-firm {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-firm.competitor { color: var(--accent); }
+    .row-firm.client { color: var(--client); }
+    .row-firm .topic { color: var(--ink-3); }
 
-    .modal-btn-primary {{
-      padding: 10px 20px;
-      background: var(--accent); color: #000;
-      font-size: 12px; font-weight: 700;
-      border-radius: 7px; text-decoration: none;
-      transition: opacity 0.12s;
-    }}
-    .modal-btn-primary:hover {{ opacity: 0.85; }}
+    .row-title {
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 1.4;
+      transition: color 0.1s;
+    }
+    .row-cw {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: right;
+    }
 
-    .modal-btn-secondary {{
-      padding: 10px 20px;
-      background: var(--surface2); color: var(--text-muted);
-      font-size: 12px; font-weight: 500;
-      border-radius: 7px; border: 1px solid var(--border2);
-      cursor: pointer; transition: all 0.12s;
-    }}
-    .modal-btn-secondary:hover {{ color: var(--text); border-color: var(--accent); }}
+    .row-detail {
+      display: none;
+      padding: 2px 0 16px 78px;
+      max-width: 720px;
+    }
+    .row.open .row-detail { display: block; }
+    .row.open { background: linear-gradient(to right, var(--accent) 2px, transparent 2px); }
+    .detail-summary {
+      font-family: var(--serif);
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: var(--ink-2);
+    }
+    .detail-meta { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+    .tagchip {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      color: var(--ink-2);
+    }
+    .source-link {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 1px;
+    }
+    .source-link:hover { opacity: 0.75; }
 
-    ::-webkit-scrollbar {{ width: 5px; }}
-    ::-webkit-scrollbar-track {{ background: var(--bg); }}
-    ::-webkit-scrollbar-thumb {{ background: var(--border2); border-radius: 3px; }}
+    .empty-note {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--ink-3);
+      font-family: var(--serif);
+      font-size: 16px;
+    }
+
+    /* ── Footer ── */
+    .foot {
+      border-top: 1px solid var(--ink);
+      padding: 20px 48px 28px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .foot-owner { display: flex; gap: 12px; align-items: center; }
+    .foot-name { font-size: 13px; font-weight: 600; }
+    .foot-role { font-size: 11.5px; color: var(--ink-2); }
+    .foot-mail {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .foot-method {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: right;
+      max-width: 46em;
+      line-height: 1.6;
+    }
+
+    /* ── Tooltip ── */
+    .tip {
+      position: fixed;
+      pointer-events: none;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 2px;
+      z-index: 100;
+      display: none;
+      white-space: nowrap;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .masthead, .lede, .register-head, .filters, .register, .foot { padding-left: 22px; padding-right: 22px; }
+      .exhibits { grid-template-columns: 1fr; }
+      .exhibit, .exhibit + .exhibit { padding: 22px; border-left: none; }
+      .exhibit + .exhibit { border-top: 1px solid var(--rule-soft); }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .kpi, .kpi:first-child { padding: 14px 22px; }
+      .row-line { grid-template-columns: 56px 1fr 48px; }
+      .row-firm { grid-column: 2; }
+      .row-title { grid-column: 1 / -1; }
+      .row-detail { padding-left: 0; }
+      .foot { flex-direction: column; }
+      .foot-method { text-align: left; }
+    }
+
+    @media print {
+      html, body { background: #fff; }
+      .page { border: none; max-width: none; }
+      .filters, .kbd-hint { display: none; }
+      .row-detail { display: block; }
+      .row { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
+<div class="page">
 
-<div class="header">
-  <div>
-    <h1>TLCA <span class="hl">Intelligence</span> Explorer</h1>
-    <div class="header-sub">Business Consulting Finance &middot; EY Z&uuml;rich &middot; Generated {now}</div>
-  </div>
-  <div class="badge">Last <b>{WINDOW_WEEKS * 7}</b> days</div>
-</div>
-
-<div class="filters">
-  <div class="filter-group">
-    <div class="filter-label">Type</div>
-    <div class="filter-pills">
-      <div class="pill active" data-filter="type" data-value="all">All</div>
-      <div class="pill" data-filter="type" data-value="competitor">Competitor</div>
-      <div class="pill" data-filter="type" data-value="client">Client</div>
-    </div>
+  <div class="masthead">
+    <div class="eyebrow">__BRAND__ __DEMO_CHIP__</div>
+    <div class="masthead-meta">__EDITION__Generated __DATE__ · Last __WINDOW_DAYS__ days</div>
   </div>
 
-  <div class="filter-group">
-    <div class="filter-label">Topic</div>
-    <div class="filter-pills">
-      <div class="pill active" data-filter="tag" data-value="all">All</div>
-      {tag_pills_html}
-    </div>
+  <div class="lede">
+    <h1>__HEADLINE__</h1>
+    <div class="deck">__DECK__</div>
   </div>
 
-  <div class="filter-group">
-    <div class="filter-label">Week</div>
-    <div class="filter-pills">
-      <div class="pill active" data-filter="week" data-value="all">All</div>
-      {week_pills_html}
-    </div>
+  <div class="kpis">
+    __KPIS__
   </div>
 
-  <div class="filter-group search-wrap">
-    <div class="filter-label">Search</div>
-    <input class="search-input" id="search" type="text" placeholder="Search titles, summaries, companies...">
-  </div>
-</div>
-
-<div class="stats-bar">
-  <div class="stat">
-    <span class="stat-num" id="stat-total">{len(signals)}</span>
-    <span>signals</span>
-  </div>
-  <div class="stat">
-    <span class="stat-dot" style="background:var(--competitor)"></span>
-    <span class="stat-num" id="stat-comp">{sum(1 for s in signals if s['feed_type']=='competitor')}</span>
-    <span>competitor</span>
-  </div>
-  <div class="stat">
-    <span class="stat-dot" style="background:var(--client)"></span>
-    <span class="stat-num" id="stat-client">{sum(1 for s in signals if s['feed_type']=='client')}</span>
-    <span>client</span>
-  </div>
-  <div class="stat">
-    <span class="stat-num">{len(set(s['company'] for s in signals))}</span>
-    <span>companies</span>
-  </div>
-  <div class="kbd-hint">
-    <span><span class="kbd">/</span> search</span>
-    <span><span class="kbd">Esc</span> reset / close</span>
-    <span><span class="kbd">click</span> expand</span>
-  </div>
-</div>
-
-<div class="grid" id="grid"></div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal" id="modal">
-    <div class="modal-header">
-      <div>
-        <div class="modal-company" id="modal-company"></div>
-        <div class="modal-title" id="modal-title"></div>
+  <div class="exhibits">
+    <div class="exhibit">
+      <div class="exhibit-eyebrow">Exhibit 1</div>
+      <div class="exhibit-title">Signal volume by calendar week</div>
+      <div class="chart" id="chart">
+        __WEEK_BARS__
       </div>
-      <button class="modal-close" id="modal-close">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-meta" id="modal-meta"></div>
-      <div class="modal-summary" id="modal-summary"></div>
-      <div class="modal-tags" id="modal-tags"></div>
-      <div class="modal-actions">
-        <a class="modal-btn-primary" id="modal-link" href="#" target="_blank" rel="noopener">Read the source</a>
-        <button class="modal-btn-secondary" id="modal-close2">Close</button>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Competitor</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--client)"></span>Client</div>
       </div>
     </div>
+    <div class="exhibit">
+      <div class="exhibit-eyebrow">Exhibit 2</div>
+      <div class="exhibit-title">Where competitors publish — firm &times; theme</div>
+      <div class="matrix-scroll">
+        __MATRIX__
+      </div>
+      <div class="exhibit-note">Competitor signals only; a signal may carry several themes. Darker cells = more signals.</div>
+    </div>
   </div>
+
+  <div class="register-head">
+    <h2>Signal register</h2>
+    <div class="register-sub">Every captured signal in the window, ranked by relevance. Click a row for the full summary.</div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <div class="filter-label">Type</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="type" data-value="all">All</button>
+        <button class="pill" data-filter="type" data-value="competitor">Competitor</button>
+        <button class="pill" data-filter="type" data-value="client">Client</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Theme</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="tag" data-value="all">All</button>
+        __TAG_PILLS__
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Relevance</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="score" data-value="all">All</button>
+        <button class="pill" data-filter="score" data-value="3">&#9733; High</button>
+        <button class="pill" data-filter="score" data-value="2">Med</button>
+        <button class="pill" data-filter="score" data-value="1">Low</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Week</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="week" data-value="all">All</button>
+        __WEEK_PILLS__
+      </div>
+    </div>
+    <div class="filter-group search-wrap">
+      <div class="filter-label">Search</div>
+      <input class="search-input" id="search" type="text" placeholder="Titles, summaries, firms&hellip;">
+    </div>
+    <div class="kbd-hint"><span class="kbd">/</span> search &nbsp;<span class="kbd">Esc</span> reset</div>
+  </div>
+
+  <div class="register" id="register"></div>
+
+  <div class="foot">
+    __FOOTER_IDENTITY__
+    <div class="foot-method">
+      Method: public sources monitored via Google Alerts RSS &middot; relevance scored 1&ndash;3 and summarised by Claude &middot;
+      summaries are AI-generated and should be verified against the source before use.
+    </div>
+  </div>
+
 </div>
+
+<div class="tip" id="tip"></div>
 
 <script>
-const SIGNALS = {signals_json};
+const SIGNALS = __SIGNALS_JSON__;
 
-const TAG_COLORS = {{
-  'GBS':            {{ bg: 'rgba(255,107,107,0.15)', color: '#FF6B6B', border: 'rgba(255,107,107,0.3)' }},
-  'GCC':            {{ bg: 'rgba(74,158,255,0.15)',  color: '#4A9EFF', border: 'rgba(74,158,255,0.3)' }},
-  'Agentic_AI':     {{ bg: 'rgba(167,139,250,0.15)', color: '#A78BFA', border: 'rgba(167,139,250,0.3)' }},
-  'Operating_Model':{{ bg: 'rgba(245,158,11,0.15)',  color: '#F59E0B', border: 'rgba(245,158,11,0.3)' }},
-}};
+const SCORE_LABEL = { 3: '★ HIGH', 2: 'MED', 1: 'LOW' };
 
-const DOT_COLORS = {{
-  'GBS': '#FF6B6B',
-  'GCC': '#4A9EFF',
-  'Agentic_AI': '#A78BFA',
-  'Operating_Model': '#F59E0B',
-}};
+let filters = { type: 'all', tag: 'all', score: 'all', week: 'all', search: '' };
 
-// Set pill dot colors
-document.querySelectorAll('.pill-dot').forEach(dot => {{
-  const tag = dot.dataset.tag;
-  if (DOT_COLORS[tag]) dot.style.background = DOT_COLORS[tag];
-}});
-
-function tagStyle(tag) {{
-  const c = TAG_COLORS[tag];
-  if (c) return `background:${{c.bg}};color:${{c.color}};border:1px solid ${{c.border}};`;
-  return 'background:rgba(107,114,128,0.15);color:#9CA3AF;border:1px solid rgba(107,114,128,0.3);';
-}}
-
-let activeFilters = {{ type: 'all', tag: 'all', week: 'all', search: '' }};
-let currentSignal = null;
-
-function shorten(text, max) {{
-  if (!text || text.length <= max) return text;
-  return text.slice(0, max - 1) + '…';
-}}
-
-function escHtml(s) {{
+function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}}
+}
 
-function matchesFilters(s) {{
-  if (activeFilters.type !== 'all' && s.feed_type !== activeFilters.type) return false;
-  if (activeFilters.tag !== 'all' && !s.tags.includes(activeFilters.tag)) return false;
-  if (activeFilters.week !== 'all' && s.week_label !== activeFilters.week) return false;
-  if (activeFilters.search) {{
-    const q = activeFilters.search.toLowerCase();
-    if (!(s.title + s.summary + s.company + s.topic).toLowerCase().includes(q)) return false;
-  }}
+function matches(s) {
+  if (filters.type !== 'all' && s.feed_type !== filters.type) return false;
+  if (filters.tag !== 'all' && !s.tags.includes(filters.tag)) return false;
+  if (filters.score !== 'all' && String(s.score) !== filters.score) return false;
+  if (filters.week !== 'all' && s.week_label !== filters.week) return false;
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    if (!(s.title + ' ' + s.summary + ' ' + s.company + ' ' + s.topic).toLowerCase().includes(q)) return false;
+  }
   return true;
-}}
+}
 
-function buildTagsHtml(tags) {{
-  return tags.map(t =>
-    `<span class="tag" style="${{tagStyle(t)}}">${{t.replace(/_/g,' ')}}</span>`
-  ).join('');
-}}
+function rowHtml(s) {
+  const firm = escHtml(s.company) + (s.topic ? ' <span class="topic">&middot; ' + escHtml(s.topic) + '</span>' : '');
+  const tags = s.tags.map(t => '<span class="tagchip">' + escHtml(t.replace(/_/g, ' ')) + '</span>').join('');
+  return '<div class="row">' +
+    '<div class="row-line">' +
+      '<span class="score score-' + s.score + '">' + (SCORE_LABEL[s.score] || s.score) + '</span>' +
+      '<span class="row-firm ' + s.feed_type + '">' + firm + '</span>' +
+      '<span class="row-title">' + escHtml(s.title) + '</span>' +
+      '<span class="row-cw">' + escHtml(s.cw) + '</span>' +
+    '</div>' +
+    '<div class="row-detail">' +
+      '<div class="detail-summary">' + escHtml(s.summary || 'No summary available.') + '</div>' +
+      '<div class="detail-meta">' + tags +
+        '<a class="source-link" href="' + escHtml(s.url) + '" target="_blank" rel="noopener">Read the source &rarr;</a>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
 
-function buildCard(s, i) {{
-  const tagsHtml = buildTagsHtml(s.tags);
-  const delay = Math.min(i * 25, 400);
-  return `
-<div class="card" style="animation-delay:${{delay}}ms" onclick="openModal(${{i}})">
-  <div class="card-header">
-    <span class="card-company ${{s.feed_type}}">${{escHtml(s.company)}}</span>
-    <div class="card-right">
-      ${{s.topic ? `<span class="card-topic">${{escHtml(s.topic)}}</span>` : ''}}
-      <span class="card-cw">${{s.cw}}</span>
-    </div>
-  </div>
-  <div class="card-body">
-    <div class="card-title">${{escHtml(s.title)}}</div>
-    <div class="card-summary">${{escHtml(shorten(s.summary, 200))}}</div>
-    ${{tagsHtml ? `<div class="card-tags">${{tagsHtml}}</div>` : ''}}
-  </div>
-  <div class="card-footer">
-    <a class="read-btn" href="${{escHtml(s.url)}}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Read the source</a>
-    <span class="expand-hint">click to expand</span>
-  </div>
-</div>`;
-}}
+function sortSignals(list) {
+  return list.slice().sort((a, b) => (b.score - a.score) || (a.created_at < b.created_at ? 1 : -1));
+}
 
-// Store filtered signals for modal navigation
-let filteredSignals = [];
-let filteredIndices = [];
+function render() {
+  const el = document.getElementById('register');
+  const visible = SIGNALS.filter(matches);
 
-function renderGrid() {{
-  const grid = document.getElementById('grid');
-  filteredSignals = SIGNALS.filter(matchesFilters);
-  filteredIndices = filteredSignals.map((s, i) => i);
-
-  document.getElementById('stat-total').textContent = filteredSignals.length;
-  document.getElementById('stat-comp').textContent = filteredSignals.filter(s => s.feed_type === 'competitor').length;
-  document.getElementById('stat-client').textContent = filteredSignals.filter(s => s.feed_type === 'client').length;
-
-  if (filteredSignals.length === 0) {{
-    grid.innerHTML = `<div class="empty"><h3>No signals found</h3><p>Try adjusting your filters.</p></div>`;
+  if (!visible.length) {
+    el.innerHTML = '<div class="empty-note">No signals match the current filters.</div>';
     return;
-  }}
+  }
 
-  const competitors = filteredSignals.filter(s => s.feed_type === 'competitor');
-  const clients = filteredSignals.filter(s => s.feed_type === 'client');
+  const comp = sortSignals(visible.filter(s => s.feed_type === 'competitor'));
+  const cli  = sortSignals(visible.filter(s => s.feed_type === 'client'));
 
   let html = '';
-  let idx = 0;
+  if (comp.length) {
+    html += '<div class="section-label sec-comp"><span>Competitor intelligence</span><span class="count">' + comp.length + '</span></div>';
+    html += comp.map(rowHtml).join('');
+  }
+  if (cli.length) {
+    html += '<div class="section-label sec-client"><span>Client signals</span><span class="count">' + cli.length + '</span></div>';
+    html += cli.map(rowHtml).join('');
+  }
+  el.innerHTML = html;
+}
 
-  if (competitors.length > 0) {{
-    if (clients.length > 0) {{
-      html += `<div class="section-divider">
-        <span class="section-divider-label" style="color:var(--competitor)">Competitor Intelligence</span>
-        <div class="section-divider-line"></div></div>`;
-    }}
-    competitors.forEach(s => {{ html += buildCard(s, idx++); }});
-  }}
+document.getElementById('register').addEventListener('click', e => {
+  if (e.target.closest('a')) return;
+  const row = e.target.closest('.row');
+  if (row) row.classList.toggle('open');
+});
 
-  if (clients.length > 0) {{
-    html += `<div class="section-divider">
-      <span class="section-divider-label" style="color:var(--client)">Client Signals</span>
-      <div class="section-divider-line"></div></div>`;
-    clients.forEach(s => {{ html += buildCard(s, idx++); }});
-  }}
-
-  grid.innerHTML = html;
-}}
-
-function openModal(gridIdx) {{
-  const s = filteredSignals[gridIdx];
-  if (!s) return;
-  currentSignal = s;
-
-  document.getElementById('modal-company').textContent = s.company + (s.topic ? ` — ${{s.topic}}` : '');
-  document.getElementById('modal-company').className = `modal-company ${{s.feed_type}}`;
-  document.getElementById('modal-title').textContent = s.title;
-  document.getElementById('modal-summary').textContent = s.summary || 'No summary available.';
-  document.getElementById('modal-link').href = s.url;
-  document.getElementById('modal-tags').innerHTML = buildTagsHtml(s.tags);
-
-  document.getElementById('modal-meta').innerHTML = `
-    <span class="modal-meta-item">${{s.cw}}</span>
-    <span class="modal-meta-item">${{s.feed_type === 'competitor' ? 'Competitor' : 'Client Signal'}}</span>
-    ${{s.tags.map(t => `<span class="modal-meta-item" style="${{tagStyle(t)}}">${{t.replace(/_/g,' ')}}</span>`).join('')}}
-  `;
-
-  document.getElementById('modal-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}}
-
-function closeModal() {{
-  document.getElementById('modal-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-  currentSignal = null;
-}}
-
-document.getElementById('modal-close').addEventListener('click', closeModal);
-document.getElementById('modal-close2').addEventListener('click', closeModal);
-document.getElementById('modal-overlay').addEventListener('click', e => {{
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
-}});
-
-// Filter pills
-document.querySelectorAll('.pill[data-filter]').forEach(pill => {{
-  pill.addEventListener('click', () => {{
+document.querySelectorAll('.pill[data-filter]').forEach(pill => {
+  pill.addEventListener('click', () => {
     const ft = pill.dataset.filter;
-    document.querySelectorAll(`.pill[data-filter="${{ft}}"]`).forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.pill[data-filter="' + ft + '"]').forEach(p => p.classList.remove('active'));
     pill.classList.add('active');
-    activeFilters[ft] = pill.dataset.value;
-    renderGrid();
-  }});
-}});
+    filters[ft] = pill.dataset.value;
+    render();
+  });
+});
 
-// Search
-document.getElementById('search').addEventListener('input', e => {{
-  activeFilters.search = e.target.value.trim();
-  renderGrid();
-}});
+document.getElementById('search').addEventListener('input', e => {
+  filters.search = e.target.value.trim();
+  render();
+});
 
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {{
-  if (e.key === 'Escape') {{
-    if (document.getElementById('modal-overlay').classList.contains('open')) {{
-      closeModal();
-    }} else {{
-      // Reset all filters
-      activeFilters = {{ type: 'all', tag: 'all', week: 'all', search: '' }};
-      document.getElementById('search').value = '';
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.pill[data-value="all"]').forEach(p => p.classList.add('active'));
-      renderGrid();
-    }}
-  }}
-  if (e.key === '/' && document.activeElement !== document.getElementById('search')) {{
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    filters = { type: 'all', tag: 'all', score: 'all', week: 'all', search: '' };
+    document.getElementById('search').value = '';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.pill[data-value="all"]').forEach(p => p.classList.add('active'));
+    render();
+  }
+  if (e.key === '/' && document.activeElement !== document.getElementById('search')) {
     e.preventDefault();
     document.getElementById('search').focus();
-  }}
-}});
+  }
+});
 
-// Initial render
-renderGrid();
+// Bar tooltips
+const tip = document.getElementById('tip');
+document.querySelectorAll('.bar[data-tip]').forEach(bar => {
+  bar.addEventListener('mousemove', e => {
+    tip.textContent = bar.dataset.tip;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 12) + 'px';
+    tip.style.top = (e.clientY - 28) + 'px';
+  });
+  bar.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+});
+
+render();
 </script>
-{photo_html_footer}
 </body>
 </html>"""
 
