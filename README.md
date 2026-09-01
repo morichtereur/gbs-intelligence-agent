@@ -85,7 +85,7 @@ Inline-styled HTML email (renders in Outlook/Gmail), grouped by firm, high-relev
 
 ## Relevance scoring
 
-Each article is scored by Claude before summarizing:
+Each article is scored by Claude before summarizing. The scorer doesn't judge from the ~150-character alert snippet alone: by default it fetches the article and reads a plain-text extract of the body (`INTEL_FETCH_ARTICLE=0` disables this; any fetch failure falls back to the snippet). It returns a relevance score, a MOVE/RESEARCH classification, and the summary in one call:
 
 | Score | Label | Meaning | Newsletter |
 |---|---|---|---|
@@ -105,7 +105,7 @@ Design decisions for a pipeline that runs from cron with nobody watching:
 - **Fail closed.** Any failed stage or feed fetch stops the run before delivery — a partial newsletter is never sent (`INTEL_FAIL_ON_FEED_ERROR=0` opts out).
 - **Edition numbering survives failures.** The counter is committed only after the email actually goes out, so a crashed run doesn't burn an edition.
 - **Transient API errors don't kill the run.** Claude calls retry on rate limits and 5xx with exponential backoff.
-- **Duplicates collapse.** The same article arriving through several alert feeds is stored once per feed but shown once — deduplicated by canonical URL (tracking parameters and Google redirects stripped).
+- **Duplicates collapse — twice.** The same article arriving through several alert feeds is deduplicated by canonical URL (tracking parameters and Google redirects stripped), and the same *story* syndicated by different outlets under different URLs is collapsed by normalized headline within a 30-day window.
 - **Precise tagging.** Keywords match on word boundaries, so `erp` never fires inside "excerpt"; articles matching no theme are dropped before they cost an API call.
 - **Everything is inspectable.** Plain SQLite, plain HTML output archived per calendar week, one log file.
 
@@ -252,6 +252,8 @@ Each instance gets its own feeds, watchlists, branding, recipients, and archive.
 | `INTEL_MAX_AGE_DAYS` | `60` | Drop feed entries published longer ago than this (0 disables) |
 | `INTEL_MIN_SCORE` | `3` | Minimum relevance score for the newsletter |
 | `INTEL_MAX_SUMMARIZE` | `30` | Max articles to summarize per run |
+| `INTEL_FETCH_ARTICLE` | `1` | Fetch article body for scoring (snippet-only fallback) |
+| `INTEL_ARTICLE_CHARS` | `2000` | Length of the article extract given to the scorer |
 | `INTEL_MAX_PER_SOURCE` | `2` | Max newsletter articles per source |
 | `INTEL_DASHBOARD_WEEKS` | `4` | Explorer lookback in weeks |
 | `CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Claude model |

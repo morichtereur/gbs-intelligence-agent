@@ -137,6 +137,12 @@ def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
 
+def norm_title(title: str) -> str:
+    """Normalize a title for near-duplicate detection: the same story often
+    arrives from several syndicating outlets under different URLs."""
+    return re.sub(r"[^a-z0-9]+", " ", (title or "").lower()).strip()
+
+
 def connect_db() -> sqlite3.Connection:
     con = sqlite3.connect(DB_PATH, timeout=30)
     try:
@@ -178,6 +184,7 @@ def ensure_schema(con: sqlite3.Connection) -> None:
     )
     _add_col_if_missing(cur, "articles", "clean_url", "TEXT")
     _add_col_if_missing(cur, "articles", "feed_type", "TEXT")
+    _add_col_if_missing(cur, "articles", "title_norm", "TEXT")
 
     cur.execute(
         """
@@ -193,6 +200,7 @@ def ensure_schema(con: sqlite3.Connection) -> None:
     cur.execute("CREATE INDEX IF NOT EXISTS idx_articles_source ON articles(source)")
     try:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_articles_clean_url ON articles(clean_url)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_articles_title_norm ON articles(title_norm)")
     except Exception:
         pass
     con.commit()
@@ -399,12 +407,27 @@ def upsert_article(
     if cur.fetchone() is not None:
         return False
 
+    # Near-duplicate collapse: the same story syndicated by several outlets
+    # arrives under different URLs but (nearly) the same headline.
+    title_normed = norm_title(title)
+    if title_normed:
+        try:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+            cur.execute(
+                "SELECT 1 FROM articles WHERE title_norm = ? AND created_at >= ? LIMIT 1",
+                (title_normed, cutoff),
+            )
+            if cur.fetchone() is not None:
+                return False
+        except Exception:
+            pass
+
     cur.execute(
         """
-        INSERT INTO articles(article_id, source, title, url, clean_url, published_at, created_at, snippet, tags, feed_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO articles(article_id, source, title, url, clean_url, published_at, created_at, snippet, tags, feed_type, title_norm)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (article_id, source, title, raw_url, clean_url, published_at, created_at, snippet, ",".join(tags), feed_type),
+        (article_id, source, title, raw_url, clean_url, published_at, created_at, snippet, ",".join(tags), feed_type, title_normed),
     )
 
     con.commit()

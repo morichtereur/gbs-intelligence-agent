@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 import sys
 from datetime import datetime, timedelta, timezone
+from html import unescape
 
 import requests
 
@@ -20,6 +22,36 @@ MAX_TO_SUMMARIZE = int((os.getenv("INTEL_MAX_SUMMARIZE", "30") or "30").strip())
 
 # Minimum relevance score to include in newsletter (1-3). Explorer shows all scores >= 1.
 NEWSLETTER_MIN_SCORE = int(os.getenv("INTEL_MIN_SCORE", "3"))
+
+# Alert snippets are ~150 characters — too little to judge relevance well.
+# By default the scorer fetches the article and reads an extract of the body;
+# on any fetch failure it falls back to the snippet alone.
+FETCH_ARTICLE = os.getenv("INTEL_FETCH_ARTICLE", "1").strip().lower() not in ("0", "false")
+ARTICLE_CHARS = int(os.getenv("INTEL_ARTICLE_CHARS", "2000"))
+FETCH_TIMEOUT = int(os.getenv("INTEL_FETCH_TIMEOUT", "15"))
+
+_FETCH_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+}
+
+
+def fetch_article_extract(url: str) -> str:
+    """Best-effort plain-text extract of the article body. Empty string on failure."""
+    if not FETCH_ARTICLE or not (url or "").lower().startswith(("http://", "https://")):
+        return ""
+    try:
+        r = requests.get(url, headers=_FETCH_HEADERS, timeout=FETCH_TIMEOUT)
+        r.raise_for_status()
+        if "html" not in (r.headers.get("content-type") or "html"):
+            return ""
+        html = r.text
+        html = re.sub(r"(?is)<(script|style|noscript|svg|head)[^>]*>.*?</\1>", " ", html)
+        text = re.sub(r"<[^>]+>", " ", html)
+        text = re.sub(r"\s+", " ", unescape(text)).strip()
+        return text[:ARTICLE_CHARS]
+    except Exception:
+        return ""
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
@@ -48,7 +80,7 @@ def clamp_text(s: str, max_chars: int) -> str:
     return s[: max_chars - 1].rstrip() + "…"
 
 
-def _build_prompt(title: str, url: str, snippet: str, feed_type: str) -> str:
+def _build_prompt(title: str, url: str, snippet: str, feed_type: str, extract: str = "") -> str:
     context_hint = (
         "This is a CLIENT signal — a publication, announcement, or market move by a company "
         "that is or could be a consulting client. Frame the summary from an advisory lens: "
@@ -83,6 +115,7 @@ SUMMARY: [2-3 sentences, max 60 words, factual, no hype]
 Title: {title}
 URL: {url}
 Snippet: {snippet}
+{f"Article extract (may be partial): {extract}" if extract else ""}
 """.strip()
 
 
@@ -175,7 +208,8 @@ def llm_summarize(title: str, url: str, snippet: str, feed_type: str = "competit
         base = clamp_text(snippet or "", 420)
         return 2, base if base else "No AI summary available. Please open the link for details.", ""
 
-    prompt = _build_prompt(title, url, snippet, feed_type)
+    extract = fetch_article_extract(url)
+    prompt = _build_prompt(title, url, snippet, feed_type, extract)
     raw = _call_claude(prompt)
 
     if not raw:

@@ -109,6 +109,20 @@
       "signal_type": "move"
     },
     {
+      "source": "SSON_AI",
+      "title": "Architecting the Agentic Enterprise: Insights on Scaling AI Agents",
+      "summary": "SSON on why agent pilots stall in shared services: scaling needs data grounding, governance guardrails, and outcome-based metrics before speed. Practitioner-side view of the structural questions limiting agentic adoption in GBS.",
+      "url": "https://www.ssonetwork.com/intelligent-automation/articles/architecting-agentic-enterprise-scaling-agents",
+      "tags": [
+        "GBS",
+        "Agentic_AI"
+      ],
+      "feed_type": "analyst",
+      "score": 2,
+      "days_ago": 6,
+      "signal_type": "research"
+    },
+    {
       "source": "Nordwind_Finance",
       "title": "Nordwind Industries announces new group CFO effective January",
       "summary": "Leadership change at the top of the finance function. The incoming CFO arrives from a company known for a centralised GBS model — a common precursor to operating model review and a natural engagement window.",
