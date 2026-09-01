@@ -45,12 +45,27 @@ FIRM_DOMAINS = {
     "accenture": "accenture.com",
 }
 
+# Domains whose favicon the icon services don't have — embed their icon
+# directly (mckinsey.com blocks non-browser requests, so a hotlink is
+# unreliable; this is their favicon downscaled to 32px).
+FIRM_ICON_OVERRIDES = {
+    "mckinsey.com": "data:image/png;base64,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",
+}
 
-def favicon_img(domain: str, size_px: int = 14, cls: str = "favicon") -> str:
+
+def firm_icon_url(domain: str) -> str:
     if not domain:
         return ""
+    return FIRM_ICON_OVERRIDES.get(
+        domain, f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
+    )
+
+
+def favicon_img(icon: str, size_px: int = 14, cls: str = "favicon") -> str:
+    if not icon:
+        return ""
     return (
-        f'<img class="{cls}" src="https://www.google.com/s2/favicons?domain={escape(domain)}&amp;sz=32" '
+        f'<img class="{cls}" src="{escape(icon)}" '
         f'alt="" width="{size_px}" height="{size_px}" loading="lazy">'
     )
 
@@ -139,7 +154,7 @@ def fetch_all_signals() -> list[dict]:
 
         signals.append({
             "domain": domain,
-            "firm_domain": firm_domains.get(company.lower(), ""),
+            "icon_url": firm_icon_url(firm_domains.get(company.lower(), "")),
             "source": src,
             "company": company,
             "topic": topic,
@@ -183,11 +198,11 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
 
     cells: dict[str, Counter] = {}
     clusters: dict[str, str] = {}
-    domains: dict[str, str] = {}
+    icons: dict[str, str] = {}
     for s in comp:
         firm = s["company"]
         clusters[firm] = s["cluster"]
-        domains[firm] = s.get("firm_domain", "")
+        icons[firm] = s.get("icon_url", "")
         c = cells.setdefault(firm, Counter())
         for t in s["tags"]:
             if t in columns:
@@ -197,7 +212,7 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
     for firm, counter in cells.items():
         rows.append({
             "firm": firm,
-            "firm_domain": domains.get(firm, ""),
+            "icon_url": icons.get(firm, ""),
             "cluster": clusters.get(firm, "Other"),
             "counts": [counter.get(t, 0) for t in columns],
             "total": sum(counter.get(t, 0) for t in columns),
@@ -266,7 +281,7 @@ def render_matrix(columns: list[str], rows: list[dict]) -> str:
                 color = HEAT_RAMP[step]
                 ink = "#FFFFFF" if step >= 3 else "#1A1E26"
                 cells.append(f'<td class="mx-cell" style="background:{color}; color:{ink};">{c}</td>')
-        icon = favicon_img(r.get("firm_domain", ""), 14)
+        icon = favicon_img(r.get("icon_url", ""), 14)
         body_rows.append(
             f'<tr>{cluster_cell}<td class="mx-firm">{icon}{escape(r["firm"])}</td>'
             f'{"".join(cells)}<td class="mx-total">{r["total"]}</td></tr>'
@@ -672,8 +687,8 @@ function rowHtml(s) {
   const star = s.score === 3 ? '<span class="star" title="High relevance">★</span> ' : '';
   const dom = s.domain ? ' · ' + escHtml(s.domain) : '';
   const cw = s.cw ? ' · ' + escHtml(s.cw) : '';
-  const icon = s.firm_domain
-    ? '<img class="favicon" src="https://www.google.com/s2/favicons?domain=' + encodeURIComponent(s.firm_domain) + '&sz=32" alt="" width="14" height="14" loading="lazy">'
+  const icon = s.icon_url
+    ? '<img class="favicon" src="' + escHtml(s.icon_url) + '" alt="" width="14" height="14" loading="lazy">'
     : '';
   return '<div class="row">' +
     '<div class="row-meta">' + star + icon + '<span class="firm">' + escHtml(s.company) + '</span>' + dom + cw + '</div>' +

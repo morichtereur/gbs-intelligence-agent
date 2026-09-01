@@ -7,7 +7,8 @@ import os
 import re
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from html import unescape
 from urllib.parse import parse_qs, urlparse, unquote, urlunparse, urlencode
 
@@ -23,6 +24,10 @@ HTTP_TIMEOUT = int(os.getenv("INTEL_HTTP_TIMEOUT", "25"))
 FAIL_ON_FEED_ERROR = os.getenv("INTEL_FAIL_ON_FEED_ERROR", "1").strip().lower() not in ("0", "false")
 
 DEDUP_ON_CANONICAL = os.getenv("INTEL_DEDUP_ON_CANONICAL", "1").strip() not in ("0", "false", "False")
+
+# Google Alerts occasionally resurfaces old pages — drop anything with a
+# parseable published date older than this many days (0 disables the check).
+MAX_AGE_DAYS = int(os.getenv("INTEL_MAX_AGE_DAYS", "60"))
 
 ALLOWED_TAGS = [
     t.strip()
@@ -245,6 +250,31 @@ def infer_tags(text: str, tag_rules: dict[str, list[str]]) -> list[str]:
     return found
 
 
+def parse_published(published: str) -> datetime | None:
+    s = (published or "").strip()
+    if not s:
+        return None
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            dt = parsedate_to_datetime(s)
+        except Exception:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def is_stale(published: str) -> bool:
+    if MAX_AGE_DAYS <= 0:
+        return False
+    dt = parse_published(published)
+    if dt is None:
+        return False
+    return dt < datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS)
+
+
 def is_excluded(title: str, url: str) -> bool:
     t = (title or "").strip()
     u = (url or "").strip()
@@ -409,6 +439,11 @@ def main() -> int:
 
                     # Only keep real, followable article links.
                     if not link.lower().startswith(("http://", "https://")):
+                        skipped_excluded += 1
+                        continue
+
+                    # Drop resurfaced old pages.
+                    if is_stale(published):
                         skipped_excluded += 1
                         continue
 

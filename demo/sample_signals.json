@@ -1,165 +1,75 @@
 {
-  "_comment": "Sample data for demo.py. Competitor items are REAL publications by these firms — titles and URLs verified live on 2026-09-01; summaries are short condensations in the pipeline's style. Client companies (Nordwind, Cantara, Veltena, Brenner) are entirely fictional and appear only in the newsletter demo, never in the dashboard.",
+  "_comment": "Sample data for demo.py — quality over quantity. Every competitor item is a REAL publication or announcement: title, URL, and publication date (>= 2026-07-01) verified live on 2026-09-01; days_ago matches the actual publication date. Summaries are short condensations in the pipeline's style. Client companies (Nordwind, Cantara, Veltena, Brenner) are entirely fictional and appear only in the newsletter demo, never in the dashboard.",
   "signals": [
     {
       "source": "McKinsey_AI",
-      "title": "The agentic organization: A new operating model for AI",
-      "summary": "Describes the agentic organization as the next operating paradigm: AI-first workflows, real-time personalisation, and cost structures decoupled from headcount growth. A foundational piece for AI-era operating model design.",
-      "url": "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/the-agentic-organization-contours-of-the-next-paradigm-for-the-ai-era",
-      "tags": ["Agentic_AI", "Operating_Model"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 2
-    },
-    {
-      "source": "McKinsey_AI",
-      "title": "Seizing the agentic AI advantage",
-      "summary": "QuantumBlack report on why agentic AI pilots stall and how to move from scattered use cases to redesigned workflows with agents embedded end to end.",
-      "url": "https://www.mckinsey.com/capabilities/quantumblack/our-insights/seizing-the-agentic-ai-advantage",
+      "title": "The state of AI in 2026: On the road to ROI",
+      "summary": "Global survey of 1,700+ respondents: 89% use AI in at least one function and 44% have scaled it across the organisation, yet only 6% qualify as high performers attributing 5%+ of EBIT to AI. The scaling-to-value gap is the core message.",
+      "url": "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai",
       "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 9
-    },
-    {
-      "source": "McKinsey_AI",
-      "title": "Scaling agentic AI with data transformations",
-      "summary": "Argues that scale requires federated governance: business domains own day-to-day oversight of agent-enabled workflows while central teams maintain shared platforms and guardrails.",
-      "url": "https://www.mckinsey.com/capabilities/mckinsey-technology/our-insights/building-the-foundations-for-agentic-ai-at-scale",
-      "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 16
-    },
-    {
-      "source": "BCG_GCC",
-      "title": "Rewriting the Global Capability Center Playbook: Scaling Maturity with AI",
-      "summary": "Finds most GCCs remain focused on delivery execution, with only 8% advanced across the dimensions most critical to enterprise value; sets out an AI-led maturity path from execution hub to capability hub.",
-      "url": "https://www.bcg.com/publications/2025/india-rewriting-the-global-capability-center-playbook",
-      "tags": ["GCC", "Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 4
-    },
-    {
-      "source": "BCG_GCC",
-      "title": "GCCs: Dinosaurs or Unicorns?",
-      "summary": "Earlier perspective on the Indian GCC ecosystem and whether captives scale into innovation engines; useful baseline for the current maturity debate.",
-      "url": "https://www.bcg.com/publications/2023/india-gccs-dinosaurs-or-unicorns",
-      "tags": ["GCC"],
-      "feed_type": "competitor",
-      "score": 1,
-      "days_ago": 24
-    },
-    {
-      "source": "Bain_OM",
-      "title": "An Operating Model for the Age of AI",
-      "summary": "Argues AI breaks the link between headcount and output, forcing a rethink of how work is structured, roles are defined, and spans and layers are set.",
-      "url": "https://www.bain.com/insights/an-operating-model-for-the-age-of-ai/",
-      "tags": ["Operating_Model", "Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 6
-    },
-    {
-      "source": "Bain_AI",
-      "title": "Is Agentic AI the Inflection Point for Scaling ERP Transformations?",
-      "summary": "Examines agents as accelerators of ERP programmes and names the blockers: unclear operating models for human-agent interaction and immature agentic tooling.",
-      "url": "https://www.bain.com/insights/is-agentic-ai-the-inflection-point-for-scaling-ERP-transformations/",
-      "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 12
-    },
-    {
-      "source": "Deloitte_GBS",
-      "title": "Global Shared Services and Outsourcing Survey",
-      "summary": "Deloitte's flagship GBS survey, built on 2,000+ respondents over eight years: India, the US, and Poland stay the top delivery locations, and half of GBS organisations plan to expand their footprint.",
-      "url": "https://www.deloitte.com/global/en/services/consulting/analysis/gx-shared-services-survey.html",
-      "tags": ["GBS"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 3
-    },
-    {
-      "source": "Deloitte_GBS",
-      "title": "2025 GBS Survey Insights, Part I: Expansion, Locations, and Evolving Models",
-      "summary": "Survey deep-dive on expansion and location choices: Mexico and Portugal rising as preferred delivery locations alongside the established hubs.",
-      "url": "https://www.deloitte.com/hu/en/services/consulting/perspectives/2025-Global-Business-Services--GBS--Survey-Insights,-Part-I--Expansion,-Locations,-and-Evolving-Models.html",
-      "tags": ["GBS", "GCC"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 13
-    },
-    {
-      "source": "EY_CFO",
-      "title": "2026 EY Global DNA of the CFO Survey",
-      "summary": "Flagship CFO survey: 80% of CFOs expect AI-enabled business models to feature significantly in their organisation within 12 months — a demand-side signal for AI-led finance transformation.",
-      "url": "https://www.ey.com/en_gl/insights/finance/dna-of-the-cfo-survey",
-      "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 5
-    },
-    {
-      "source": "EY_AI",
-      "title": "How AI is transforming financial planning and analysis",
-      "summary": "Positions GenAI adoption and agentic orchestration as the lever that shifts FP&A from reporting cycles toward continuous, insight-driven planning.",
-      "url": "https://www.ey.com/en_us/services/consulting/finance-consulting-services/how-ai-is-transforming-financial-planning-and-analysis",
-      "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 18
-    },
-    {
-      "source": "KPMG_GCC",
-      "title": "KPMG firms recognised as a Leader in ISG Provider Lens GCC Services 2025",
-      "summary": "Analyst recognition placing KPMG among the leaders for global capability center services — a positioning signal in the increasingly contested GCC advisory market.",
-      "url": "https://kpmg.com/in/en/about/analyst-relations/kpmg-firms-recognised-as-a-leader-in-isg-provider-lens-global-capability-center-gcc-services-2025.html",
-      "tags": ["GCC"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 15
-    },
-    {
-      "source": "PwC_AI",
-      "title": "PwC's AI Agent Survey",
-      "summary": "Survey of 300 senior executives: 79% report AI agents already adopted and 88% plan budget increases driven by agentic AI; trust drops sharply for high-stakes autonomous use cases.",
-      "url": "https://www.pwc.com/us/en/tech-effect/ai-analytics/ai-agent-survey.html",
-      "tags": ["Agentic_AI"],
-      "feed_type": "competitor",
-      "score": 3,
-      "days_ago": 1
-    },
-    {
-      "source": "PwC_AI",
-      "title": "Agentic AI reinvention: Making AI agents accretive to the P&L",
-      "summary": "Framework for moving agents from pilots to P&L impact, tying agent deployment to workflow redesign and measurable value cases.",
-      "url": "https://www.pwc.com/us/en/services/ai/agentic-ai-reinvention.html",
-      "tags": ["Agentic_AI", "Operating_Model"],
-      "feed_type": "competitor",
-      "score": 2,
-      "days_ago": 10
-    },
-    {
-      "source": "Accenture_GBS",
-      "title": "Generative AI in Operations for AI-Powered Reinvention",
-      "summary": "Positions GenAI-powered managed services as the successor to labor-based delivery — a structural signal for outsourcing and GBS economics.",
-      "url": "https://www.accenture.com/us-en/insights/strategic-managed-services/reinvent-operations-with-genai",
-      "tags": ["GBS", "Agentic_AI"],
       "feed_type": "competitor",
       "score": 3,
       "days_ago": 7
     },
     {
-      "source": "Accenture_AI",
-      "title": "New Accenture Research Finds that Companies with AI-Led Processes Outperform Peers",
-      "summary": "Research note: organisations with fully modernised, AI-led processes nearly doubled year over year (9% to 16%) and show 2.5x higher revenue growth than peers.",
-      "url": "https://newsroom.accenture.com/news/2024/new-accenture-research-finds-that-companies-with-ai-led-processes-outperform-peers",
+      "source": "McKinsey_AI",
+      "title": "How to close the agentic adoption gap",
+      "summary": "Argues AI transformations are a reinvention of how work gets done: successful adopters spend $3 on process redesign and $5 on capability building for every $1 on agentic technology — most companies invert the ratio.",
+      "url": "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/how-to-close-the-agentic-adoption-gap",
       "tags": ["Agentic_AI", "Operating_Model"],
       "feed_type": "competitor",
-      "score": 2,
+      "score": 3,
+      "days_ago": 25
+    },
+    {
+      "source": "Deloitte_AI",
+      "title": "AI Agents are Only the Beginning: Deloitte Survey Examines the AI Readiness Gap",
+      "summary": "Survey of 501 senior leaders: 74% expect nearly half of business processes to be redesigned or rebuilt around AI agents within four years, yet only 5% say their processes are highly prepared today.",
+      "url": "https://www.deloitte.com/us/en/about/press-room/deloitte-survey-examines-ai-readiness-agentic-ai-success.html",
+      "tags": ["Agentic_AI", "Operating_Model"],
+      "feed_type": "competitor",
+      "score": 3,
       "days_ago": 20
+    },
+    {
+      "source": "Deloitte_GBS",
+      "title": "What does the rise in agentic AI mean for Global Business Services?",
+      "summary": "Dbriefs session on how agentic AI reorients GBS from transactional execution toward oversight and orchestration — organisational rethinking, adoption strategy, and implementation barriers.",
+      "url": "https://www.deloitte.com/us/en/dbriefs-webcasts/what-does-the-rise-in-agentic-ai-mean-for-global-business-services.html",
+      "tags": ["GBS", "Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 40
+    },
+    {
+      "source": "PwC_AI",
+      "title": "PwC and OpenAI launch agentic contact and service solutions",
+      "summary": "PwC US launches an 'agentic front office' for customer engagement and service, developed with OpenAI — a productised competitor offering built on a frontier-lab partnership.",
+      "url": "https://www.pwc.com/us/en/about-us/newsroom/press-releases/pwc-openai-agentic-contact-service-solutions.html",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 48
+    },
+    {
+      "source": "KPMG_AI",
+      "title": "KPMG Quarterly AI Pulse Survey: Technology",
+      "summary": "Quarterly pulse of technology leaders: AI investment and agent adoption hold steady while leading firms shift focus from deployment to coordination, cost visibility, and executive accountability.",
+      "url": "https://kpmg.com/us/en/articles/2026/kpmg-quarterly-ai-pulse-survey-technology.html",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 36
+    },
+    {
+      "source": "Accenture_AI",
+      "title": "Accenture Edge and Google Cloud Bring Scalable Agentic AI Solutions to Mid-Market Companies",
+      "summary": "Pre-built, industry-specific agent solutions for mid-market companies ($300M–$3B revenue) — packaged agentic delivery moving down-market, with implications for services pricing.",
+      "url": "https://newsroom.accenture.com/news/2026/accenture-edge-and-google-cloud-bring-scalable-agentic-ai-solutions-to-mid-market-companies",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 56
     },
     {
       "source": "Nordwind_Finance",

@@ -226,6 +226,7 @@ export INTEL_MIN_SCORE=2   # include MED signals (default: 3)
 | `INTEL_SOURCES_PATH` | `sources.json` | Feed and tagging configuration |
 | `INTEL_FAIL_ON_FEED_ERROR` | `1` | Stop before delivery when a feed fails |
 | `INTEL_WINDOW_DAYS` | `7` | Newsletter lookback window |
+| `INTEL_MAX_AGE_DAYS` | `60` | Drop feed entries published longer ago than this (0 disables) |
 | `INTEL_MIN_SCORE` | `3` | Minimum relevance score for the newsletter |
 | `INTEL_MAX_SUMMARIZE` | `30` | Max articles to summarize per run |
 | `INTEL_MAX_PER_SOURCE` | `2` | Max newsletter articles per source |
