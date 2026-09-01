@@ -36,3 +36,6 @@ venv/
 
 # Edition counter (local state)
 edition.txt
+
+# local archives
+*.tar
