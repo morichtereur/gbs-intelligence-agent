@@ -23,6 +23,13 @@ NEWSLETTER_MIN_SCORE = int(os.getenv("INTEL_MIN_SCORE", "3"))
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
+CLAUDE_MAX_RETRIES = int(os.getenv("CLAUDE_MAX_RETRIES", "3"))
+
+# Who the newsletter is for — used to frame the relevance-scoring prompt.
+BRAND_CONTEXT = os.getenv(
+    "INTEL_BRAND_CONTEXT",
+    "a GBS / finance transformation consulting team",
+).strip()
 
 
 def now_utc_iso() -> str:
@@ -52,7 +59,7 @@ def _build_prompt(title: str, url: str, snippet: str, feed_type: str) -> str:
         else "This is a COMPETITOR signal — a publication or market move by a consulting firm (MBB / Big4 / Accenture)."
     )
 
-    return f"""You are producing a weekly competitor intelligence newsletter for Business Consulting Finance (EY Zürich).
+    return f"""You are producing a weekly competitor intelligence newsletter for {BRAND_CONTEXT}.
 {context_hint}
 
 First, rate the strategic relevance of this article for a GBS/finance transformation consultant on a scale of 1-3:
@@ -90,18 +97,32 @@ def _call_claude(prompt: str) -> str:
         "temperature": 0.2,
         "messages": [{"role": "user", "content": prompt}],
     }
-    try:
-        resp = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=CLAUDE_TIMEOUT_SECONDS)
-        resp.raise_for_status()
-        data = resp.json()
-        text_out = ""
-        for block in data.get("content", []):
-            if isinstance(block, dict) and block.get("type") == "text":
-                text_out += block.get("text", "")
-        return text_out.strip()
-    except Exception as e:
-        sys.stderr.write(f"[WARN] Claude API failed: {e}\n")
-        return ""
+    import time
+
+    for attempt in range(1, CLAUDE_MAX_RETRIES + 1):
+        try:
+            resp = requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, timeout=CLAUDE_TIMEOUT_SECONDS)
+            # Retry on rate limits and transient server errors.
+            if resp.status_code in (429, 500, 502, 503, 529) and attempt < CLAUDE_MAX_RETRIES:
+                wait = 2 ** attempt
+                sys.stderr.write(f"[WARN] Claude API {resp.status_code}, retrying in {wait}s ({attempt}/{CLAUDE_MAX_RETRIES})\n")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            text_out = ""
+            for block in data.get("content", []):
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text_out += block.get("text", "")
+            return text_out.strip()
+        except Exception as e:
+            if attempt < CLAUDE_MAX_RETRIES:
+                wait = 2 ** attempt
+                sys.stderr.write(f"[WARN] Claude API failed ({e}), retrying in {wait}s ({attempt}/{CLAUDE_MAX_RETRIES})\n")
+                time.sleep(wait)
+                continue
+            sys.stderr.write(f"[WARN] Claude API failed after {CLAUDE_MAX_RETRIES} attempts: {e}\n")
+    return ""
 
 
 def parse_response(raw: str) -> tuple[int, str]:

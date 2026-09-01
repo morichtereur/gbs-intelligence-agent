@@ -60,7 +60,7 @@ set_env_default CLAUDE_TIMEOUT_SECONDS   "45"
 set_env_default INTEL_TEMPLATE_PATH      "templates/newsletter_template.html"
 set_env_default INTEL_DASHBOARD_WEEKS    "4"
 
-set_env_default INTEL_BTN_BG             "#2563EB"
+set_env_default INTEL_BTN_BG             "#27568C"
 set_env_default INTEL_BTN_TXT            "#FFFFFF"
 set_env_default INTEL_BTN_LABEL          "Read the source"
 set_env_default INTEL_SUBJECT_PREFIX     "Weekly Competitor Intelligence Brief - GBS | GCC | Agentic AI"

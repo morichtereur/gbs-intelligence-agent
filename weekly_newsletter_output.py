@@ -13,10 +13,16 @@ TEMPLATE_PATH = os.getenv("INTEL_TEMPLATE_PATH", "templates/newsletter_template.
 OUT_DIR = Path(os.getenv("INTEL_OUT_DIR", "output"))
 WINDOW_DAYS = int(os.getenv("INTEL_WINDOW_DAYS", "7"))
 EDITION = os.getenv("INTEL_EDITION", "1")
-BTN_BG = os.getenv("INTEL_BTN_BG", "#FFC72C")
-BTN_TXT = os.getenv("INTEL_BTN_TXT", "#1A1A24")
+BTN_BG = os.getenv("INTEL_BTN_BG", "#27568C")
+BTN_TXT = os.getenv("INTEL_BTN_TXT", "#FFFFFF")
 BTN_LABEL = os.getenv("INTEL_BTN_LABEL", "Read the source")
 MAX_PER_SOURCE = int(os.getenv("INTEL_MAX_PER_SOURCE", "2"))
+MIN_SCORE = int(os.getenv("INTEL_MIN_SCORE", "3"))
+
+ORG_NAME = os.getenv("INTEL_ORG_NAME", "GBS Intelligence Agent")
+CONTACT_NAME = os.getenv("INTEL_CONTACT_NAME", "")
+CONTACT_ROLE = os.getenv("INTEL_CONTACT_ROLE", "")
+CONTACT_EMAIL = os.getenv("INTEL_CONTACT_EMAIL", os.getenv("GMAIL_USER", ""))
 
 SUMMARY_MAX_CHARS = 380
 FALLBACK_SUMMARY = "No AI summary available. Please open the source for details."
@@ -55,10 +61,10 @@ def fetch_articles(feed_type_filter: str) -> dict[str, list[dict]]:
           AND COALESCE(a.feed_type, 'competitor') = ?
           AND COALESCE(s.bullets, '') != ''
           AND UPPER(COALESCE(s.bullets, '')) NOT LIKE 'SKIP%'
-          AND COALESCE(s.relevance_score, 2) >= 3
+          AND COALESCE(s.relevance_score, 2) >= ?
         ORDER BY s.relevance_score DESC, a.created_at DESC
         """,
-        (start_iso, end_iso, feed_type_filter),
+        (start_iso, end_iso, feed_type_filter, MIN_SCORE),
     )
     rows = cur.fetchall()
     con.close()
@@ -93,7 +99,7 @@ def _tag_badges(tags_str: str) -> str:
         return ""
     return " ".join(
         f'<span style="background:#F0F0F8; color:#555; font-size:10px; padding:2px 7px; '
-        f'border-radius:3px; margin-right:4px; display:inline-block;">{escape(t)}</span>'
+        f'border-radius:3px; margin-right:4px; display:inline-block;">{escape(t.replace("_", " "))}</span>'
         for t in tag_list
     )
 
@@ -207,6 +213,15 @@ def render_html(template: str, competitor_html: str, client_section_html: str) -
     out = out.replace("{{ARTICLES_HTML}}", competitor_html)
     out = out.replace("{{EY_HTML}}", "")
 
+    # Drop the contact card entirely when no contact is configured.
+    if not CONTACT_NAME and not CONTACT_EMAIL:
+        start_marker = "<!-- CONTACT_BLOCK_START -->"
+        end_marker = "<!-- CONTACT_BLOCK_END -->"
+        start = out.find(start_marker)
+        end = out.find(end_marker)
+        if start != -1 and end != -1:
+            out = out[:start] + out[end + len(end_marker):]
+
     if client_section_html:
         out = out.replace(
             "<!-- CONTACTS (no sign-off, just contacts) -->",
@@ -217,6 +232,10 @@ def render_html(template: str, competitor_html: str, client_section_html: str) -
     out = out.replace("{{EDITION}}", EDITION)
     out = out.replace("{{WINDOW_DAYS}}", str(WINDOW_DAYS))
     out = out.replace("{{YEAR}}", year)
+    out = out.replace("{{ORG_NAME}}", escape(ORG_NAME))
+    out = out.replace("{{CONTACT_NAME}}", escape(CONTACT_NAME))
+    out = out.replace("{{CONTACT_ROLE}}", escape(CONTACT_ROLE))
+    out = out.replace("{{CONTACT_EMAIL}}", escape(CONTACT_EMAIL))
     return out
 
 

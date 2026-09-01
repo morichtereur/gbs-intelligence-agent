@@ -210,7 +210,9 @@ def load_sources() -> tuple[list[FeedSource], dict[str, list[str]], list[str], l
 
 def is_blocked_domain(url: str, blocked_domains: list[str]) -> bool:
     try:
-        host = urlparse(url).netloc.lower().lstrip('www.')
+        host = urlparse(url).netloc.lower()
+        if host.startswith("www."):
+            host = host[4:]
         return any(host == d or host.endswith('.' + d) for d in blocked_domains)
     except Exception:
         return False
