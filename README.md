@@ -27,7 +27,7 @@ python3 demo.py
 ```
 
 Then open `output/DEMO/intelligence_explorer.html` and `output/DEMO/newsletter_full.html` in a browser.
-The demo seeds bundled sample signals (clearly labeled as illustrative) and runs the real rendering pipeline.
+The demo's competitor signals are real publications by the firms (verified links); the client companies are fictional. It runs the real rendering pipeline.
 
 ---
 
@@ -62,8 +62,8 @@ flowchart LR
 A standalone consulting-style HTML dashboard focused on the consultancies — no server, no framework, just open it in a browser:
 
 - **Answer-first headline** derived from the week's data (top theme, most active firm)
-- **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**)
-- **Signal list** ranked by relevance — each title links straight to the source, with the AI summary and source domain underneath
+- **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**), with firm logos
+- **Signal list** ranked by relevance — each title links straight to the source, with the firm logo, AI summary, and source domain
 - Theme filter and full-text search, keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer
 
 Client signals stay in the email brief; the dashboard deliberately keeps only the competitor view.
@@ -259,4 +259,4 @@ MIT — free to use, modify, and distribute.
 
 ---
 
-*Built as a personal project to automate competitive intelligence for GBS and finance transformation consulting. The demo dashboard and all sample data are illustrative; client companies in the demo are fictional. Contributions welcome.*
+*Built as a personal project to automate competitive intelligence for GBS and finance transformation consulting. The demo's competitor signals link to real publications by the named firms (summaries are condensed); the client companies in the demo are fictional. Firm logos are rendered as favicons from each firm's own domain. Contributions welcome.*

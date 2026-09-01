@@ -32,6 +32,28 @@ TAG_LABELS = {
 }
 CLUSTER_ORDER = ["MBB", "Big4", "Accenture", "Other"]
 
+# Firm logos are rendered as favicons from the firm's own domain.
+# Extend or override via a "firm_domains" object in sources.json.
+FIRM_DOMAINS = {
+    "mckinsey": "mckinsey.com",
+    "bcg": "bcg.com",
+    "bain": "bain.com",
+    "deloitte": "deloitte.com",
+    "ey": "ey.com",
+    "kpmg": "kpmg.com",
+    "pwc": "pwc.com",
+    "accenture": "accenture.com",
+}
+
+
+def favicon_img(domain: str, size_px: int = 14, cls: str = "favicon") -> str:
+    if not domain:
+        return ""
+    return (
+        f'<img class="{cls}" src="https://www.google.com/s2/favicons?domain={escape(domain)}&amp;sz=32" '
+        f'alt="" width="{size_px}" height="{size_px}" loading="lazy">'
+    )
+
 # Sequential single-hue ramp (light -> dark) for the firm x theme matrix.
 HEAT_RAMP = ["#F1F5FA", "#D9E4F0", "#B3C9E1", "#82A6CB", "#4F7BAA", "#27568C"]
 
@@ -68,7 +90,8 @@ def fetch_all_signals() -> list[dict]:
     rows = cur.fetchall()
     con.close()
 
-    # Load firm clusters from sources.json
+    # Load firm clusters (and optional logo domains) from sources.json
+    firm_domains = dict(FIRM_DOMAINS)
     try:
         with open(SOURCES_PATH, encoding="utf-8") as cf:
             scfg = json.load(cf)
@@ -77,6 +100,9 @@ def fetch_all_signals() -> list[dict]:
         for cluster, firms in firm_clusters.items():
             for firm in firms:
                 company_to_cluster[firm.lower()] = cluster
+        for firm, dom in scfg.get("firm_domains", {}).items():
+            if not firm.startswith("_") and isinstance(dom, str):
+                firm_domains[firm.lower()] = dom
     except Exception:
         company_to_cluster = {}
 
@@ -113,6 +139,7 @@ def fetch_all_signals() -> list[dict]:
 
         signals.append({
             "domain": domain,
+            "firm_domain": firm_domains.get(company.lower(), ""),
             "source": src,
             "company": company,
             "topic": topic,
@@ -156,9 +183,11 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
 
     cells: dict[str, Counter] = {}
     clusters: dict[str, str] = {}
+    domains: dict[str, str] = {}
     for s in comp:
         firm = s["company"]
         clusters[firm] = s["cluster"]
+        domains[firm] = s.get("firm_domain", "")
         c = cells.setdefault(firm, Counter())
         for t in s["tags"]:
             if t in columns:
@@ -168,6 +197,7 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
     for firm, counter in cells.items():
         rows.append({
             "firm": firm,
+            "firm_domain": domains.get(firm, ""),
             "cluster": clusters.get(firm, "Other"),
             "counts": [counter.get(t, 0) for t in columns],
             "total": sum(counter.get(t, 0) for t in columns),
@@ -236,8 +266,9 @@ def render_matrix(columns: list[str], rows: list[dict]) -> str:
                 color = HEAT_RAMP[step]
                 ink = "#FFFFFF" if step >= 3 else "#1A1E26"
                 cells.append(f'<td class="mx-cell" style="background:{color}; color:{ink};">{c}</td>')
+        icon = favicon_img(r.get("firm_domain", ""), 14)
         body_rows.append(
-            f'<tr>{cluster_cell}<td class="mx-firm">{escape(r["firm"])}</td>'
+            f'<tr>{cluster_cell}<td class="mx-firm">{icon}{escape(r["firm"])}</td>'
             f'{"".join(cells)}<td class="mx-total">{r["total"]}</td></tr>'
         )
     return (
@@ -425,6 +456,12 @@ HTML_TEMPLATE = r"""<!doctype html>
       font-size: 14px;
       padding: 4px 12px 4px 0;
       white-space: nowrap;
+    }
+    .favicon {
+      width: 14px; height: 14px;
+      border-radius: 3px;
+      vertical-align: -2px;
+      margin-right: 7px;
     }
     .mx-cell {
       font-size: 13px;
@@ -635,8 +672,11 @@ function rowHtml(s) {
   const star = s.score === 3 ? '<span class="star" title="High relevance">★</span> ' : '';
   const dom = s.domain ? ' · ' + escHtml(s.domain) : '';
   const cw = s.cw ? ' · ' + escHtml(s.cw) : '';
+  const icon = s.firm_domain
+    ? '<img class="favicon" src="https://www.google.com/s2/favicons?domain=' + encodeURIComponent(s.firm_domain) + '&sz=32" alt="" width="14" height="14" loading="lazy">'
+    : '';
   return '<div class="row">' +
-    '<div class="row-meta">' + star + '<span class="firm">' + escHtml(s.company) + '</span>' + dom + cw + '</div>' +
+    '<div class="row-meta">' + star + icon + '<span class="firm">' + escHtml(s.company) + '</span>' + dom + cw + '</div>' +
     '<a class="row-title" href="' + escHtml(s.url) + '" target="_blank" rel="noopener">' +
       escHtml(s.title) + '</a>' +
     '<div class="row-sum">' + escHtml(s.summary || '') + '</div>' +

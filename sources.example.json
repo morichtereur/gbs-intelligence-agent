@@ -36,6 +36,18 @@
     "Accenture": ["Accenture"]
   },
 
+  "firm_domains": {
+    "_comment": "Firm logos in the dashboard are favicons from these domains. The big consultancies are built in; add entries for other firms you track.",
+    "McKinsey": "mckinsey.com",
+    "BCG": "bcg.com",
+    "Bain": "bain.com",
+    "Deloitte": "deloitte.com",
+    "EY": "ey.com",
+    "KPMG": "kpmg.com",
+    "PwC": "pwc.com",
+    "Accenture": "accenture.com"
+  },
+
   "blocked_domains": [
     "gurufocus.com",
     "marketbeat.com",
