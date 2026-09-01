@@ -62,14 +62,15 @@ The pipeline is deliberately conservative: it stops on any failed stage or feed 
 
 ### Intelligence Explorer
 
-A standalone consulting-style HTML dashboard — no server, no framework, just open it in a browser:
+A standalone consulting-style HTML dashboard focused on the consultancies — no server, no framework, just open it in a browser:
 
 - **Answer-first headline** derived from the week's data (top theme, most active firm)
-- **KPI strip**: signals captured, high-relevance count, organisations tracked, most active firm
-- **Exhibit 1** — signal volume by calendar week, competitor vs client
-- **Exhibit 2** — firm × theme matrix showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**)
-- **Signal register** — every signal ranked by relevance with expandable AI summaries, filterable by type, theme, relevance, week, and full-text search
-- Keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer
+- **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**)
+- **Signal list** ranked by relevance — each title links straight to the source, with the AI summary underneath
+- Theme filter and full-text search, keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer
+- Duplicate articles arriving through several alert feeds are collapsed to one entry
+
+Client signals stay in the email brief; the dashboard deliberately keeps only the competitor view.
 
 ### Email brief
 

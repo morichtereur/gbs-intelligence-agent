@@ -393,6 +393,11 @@ def main() -> int:
                     link = normalize_url(raw_link)
                     published = (ent.get("published", "") or "").strip()
 
+                    # Only keep real, followable article links.
+                    if not link.lower().startswith(("http://", "https://")):
+                        skipped_excluded += 1
+                        continue
+
                     if is_excluded(title, link):
                         skipped_excluded += 1
                         continue
