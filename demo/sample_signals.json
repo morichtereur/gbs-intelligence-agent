@@ -96,6 +96,19 @@
       "signal_type": "move"
     },
     {
+      "source": "EY_GCC",
+      "title": "EY named a Leader in the HFS Global Capability Centers Services Horizons Report, 2026",
+      "summary": "HFS ranks EY a Horizon 3 Market Leader for end-to-end GCC lifecycle services — consulting, tax, risk, and technology combined to design, build, and transform AI-enabled capability centers. A positioning signal in the GCC advisory market.",
+      "url": "https://www.ey.com/en_gl/newsroom/2026/07/ey-named-a-leader-in-the-hfs-global-capability-centers-services-horizons-report-2026",
+      "tags": [
+        "GCC"
+      ],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 46,
+      "signal_type": "move"
+    },
+    {
       "source": "Nordwind_Finance",
       "title": "Nordwind Industries announces new group CFO effective January",
       "summary": "Leadership change at the top of the finance function. The incoming CFO arrives from a company known for a centralised GBS model — a common precursor to operating model review and a natural engagement window.",
