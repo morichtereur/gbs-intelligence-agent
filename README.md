@@ -1,15 +1,16 @@
-# TLCA — Thought Leadership Collection Agent
+# GBS Intelligence Agent
 
 > Automated competitor & client intelligence for GBS / Finance Transformation consulting.
 > Weekly newsletter + interactive dashboard — fully automated via cron.
 
-**Built by [Moritz Richter](https://www.linkedin.com/in/moritz-richter) · Business Consulting Finance**
+**Built by [Moritz Richter](https://www.linkedin.com/in/moritz-richter-28297119a/) · Business Consulting Finance**
 
 ---
 
 ## What it does
 
-TLCA monitors public sources for strategic signals relevant to **Global Business Services (GBS)**, **Global Capability Centers (GCC)**, and **Agentic AI** — and delivers a curated weekly intelligence brief automatically.
+TLCA (Thought Leadership Collection Agent, the internal name used throughout the code)
+monitors public sources for strategic signals relevant to **Global Business Services (GBS)**, **Global Capability Centers (GCC)**, and **Agentic AI** — and delivers a curated weekly intelligence brief automatically.
 
 ```
 Google Alerts (RSS feeds)
