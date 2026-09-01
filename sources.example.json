@@ -49,6 +49,14 @@
   "client_sources": [
     "Client1"
   ],
+  "client_required_phrases": {
+    "_comment": "For clients whose short name collides with other things (acronyms especially), require one of these phrases in the article. Default: the company key itself.",
+    "Client1": ["client one holdings"]
+  },
+  "client_company_aliases": {
+    "_comment": "Other names a monitored company operates under (spinoffs, rebrands). Counted in the wrong-company filter and passed to the scorer so alias-named articles are not skipped.",
+    "Client1": ["ClientOne Nova"]
+  },
   "firm_clusters": {
     "MBB": [
       "McKinsey",

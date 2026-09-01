@@ -17,6 +17,7 @@ CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001").strip()
 CLAUDE_TIMEOUT_SECONDS = int(os.getenv("CLAUDE_TIMEOUT_SECONDS", "45"))
 
 DB_PATH = os.getenv("INTEL_DB_PATH", "intel.db")
+SOURCES_PATH = os.getenv("INTEL_SOURCES_PATH", "sources.json")
 WINDOW_DAYS = int((os.getenv("INTEL_WINDOW_DAYS", "7") or "7").strip())
 MAX_TO_SUMMARIZE = int((os.getenv("INTEL_MAX_SUMMARIZE", "30") or "30").strip())
 
@@ -80,16 +81,28 @@ def clamp_text(s: str, max_chars: int) -> str:
     return s[: max_chars - 1].rstrip() + "…"
 
 
-def _build_prompt(title: str, url: str, snippet: str, feed_type: str, extract: str = "") -> str:
-    context_hint = (
-        "This is a CLIENT signal — a publication, announcement, or market move by a company "
-        "that is or could be a consulting client. Frame the summary from an advisory lens: "
-        "what does this signal about their strategic direction, challenges, or transformation agenda? "
-        "Do NOT start your response with CLIENT SIGNAL or any label prefix. "
-        "If the article is primarily about a different company and the target company is only mentioned in passing, respond exactly: SKIP"
-        if feed_type == "client"
-        else "This is a COMPETITOR signal — a publication or market move by a consulting firm (MBB / Big4 / Accenture)."
-    )
+def _build_prompt(title: str, url: str, snippet: str, feed_type: str, extract: str = "",
+                  source_company: str = "", aliases: list[str] | None = None) -> str:
+    if feed_type == "client":
+        alias_hint = ""
+        if aliases:
+            alias_names = " / ".join(aliases)
+            alias_hint = (
+                f" {source_company} also operates or is now known under: {alias_names} "
+                f"(e.g. a spinoff or rebrand) — treat articles about {alias_names} as being about "
+                f"{source_company} too, not a different company."
+            )
+        company_hint = f" The monitored company is: {source_company}.{alias_hint}" if source_company else ""
+        context_hint = (
+            f"This is a CLIENT signal — a publication, announcement, or market move by a company "
+            f"that is or could be a consulting client.{company_hint} "
+            "Frame the summary from an advisory lens: "
+            "what does this signal about their strategic direction, challenges, or transformation agenda? "
+            "Do NOT start your response with CLIENT SIGNAL or any label prefix. "
+            "If the article is primarily about a different company and the monitored company is only mentioned in passing, respond exactly: SKIP"
+        )
+    else:
+        context_hint = "This is a COMPETITOR signal — a publication or market move by a consulting firm (MBB / Big4 / Accenture) or an analyst house."
 
     return f"""You are producing a weekly competitor intelligence newsletter for {BRAND_CONTEXT}.
 {context_hint}
@@ -202,14 +215,27 @@ def parse_response(raw: str) -> tuple[int, str, str]:
     return score, clamp_text(summary, 600), signal_type
 
 
-def llm_summarize(title: str, url: str, snippet: str, feed_type: str = "competitor") -> tuple[int, str, str]:
+def load_client_company_aliases() -> dict[str, list[str]]:
+    """Known other names for a monitored company — e.g. a spun-off business
+    trading under a new brand. Without the hint, the scorer sees a title about
+    the new name with a company hint of the old one and wrongly SKIPs it."""
+    import json
+    try:
+        with open(SOURCES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f).get("client_company_aliases", {})
+    except Exception:
+        return {}
+
+
+def llm_summarize(title: str, url: str, snippet: str, feed_type: str = "competitor",
+                  source_company: str = "", aliases: list[str] | None = None) -> tuple[int, str, str]:
     """Returns (score, summary, signal_type). Score 0 = SKIP."""
     if (not ENABLE_LLM) or (not ANTHROPIC_API_KEY):
         base = clamp_text(snippet or "", 420)
         return 2, base if base else "No AI summary available. Please open the link for details.", ""
 
     extract = fetch_article_extract(url)
-    prompt = _build_prompt(title, url, snippet, feed_type, extract)
+    prompt = _build_prompt(title, url, snippet, feed_type, extract, source_company, aliases)
     raw = _call_claude(prompt)
 
     if not raw:
@@ -265,7 +291,8 @@ def main() -> int:
                    COALESCE(a.title, ''),
                    COALESCE(a.clean_url, a.url, ''),
                    COALESCE(a.snippet, ''),
-                   COALESCE(a.feed_type, 'competitor')
+                   COALESCE(a.feed_type, 'competitor'),
+                   COALESCE(a.source, '')
             FROM articles a
             LEFT JOIN article_summaries s ON s.article_id = a.article_id
             WHERE a.created_at >= ?
@@ -283,9 +310,16 @@ def main() -> int:
         skipped = 0
         score_dist = {1: 0, 2: 0, 3: 0}
 
-        for article_id, title, url, snippet, feed_type in rows:
+        company_aliases = load_client_company_aliases()
+
+        for article_id, title, url, snippet, feed_type, source in rows:
             try:
-                score, summary, signal_type = llm_summarize(title=title, url=url, snippet=snippet, feed_type=feed_type)
+                source_company = source.split("_")[0] if feed_type == "client" and source else ""
+                score, summary, signal_type = llm_summarize(
+                    title=title, url=url, snippet=snippet, feed_type=feed_type,
+                    source_company=source_company,
+                    aliases=company_aliases.get(source_company) if source_company else None,
+                )
 
                 if score == 0 or summary.upper() == "SKIP":
                     cur.execute(

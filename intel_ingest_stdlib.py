@@ -218,7 +218,10 @@ def load_sources() -> tuple[list[FeedSource], dict[str, list[str]], list[str], l
     competitor_sources = cfg.get("competitor_sources", [])
     analyst_sources = cfg.get("analyst_sources", [])
     blocked_domains = cfg.get("blocked_domains", [])
-    return feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains
+    client_required_phrases = cfg.get("client_required_phrases", {})
+    client_company_aliases = cfg.get("client_company_aliases", {})
+    return (feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains,
+            client_required_phrases, client_company_aliases)
 
 
 def is_blocked_domain(url: str, blocked_domains: list[str]) -> bool:
@@ -292,6 +295,18 @@ def is_excluded(title: str, url: str) -> bool:
     if EXCLUDE_TITLE_RE and t and EXCLUDE_TITLE_RE.search(t):
         return True
     return False
+
+
+def client_mentions_company(text: str, source: str, required_phrases: dict, aliases: dict) -> bool:
+    """Client alerts often return articles about entirely different companies
+    (acronym collisions especially). Require the company name — or a configured
+    phrase or alias (e.g. a spinoff's new name) — to appear in the text.
+    Configure via 'client_required_phrases' / 'client_company_aliases' in sources.json."""
+    key = (source or "").split("_")[0]
+    phrases = list(required_phrases.get(key) or [key])
+    phrases += aliases.get(key, [])
+    t = (text or "").lower()
+    return any(p.lower() in t for p in phrases if p)
 
 
 def get_feed_type(source: str, competitor_sources: list[str], analyst_sources: list[str]) -> str:
@@ -435,7 +450,8 @@ def upsert_article(
 
 
 def main() -> int:
-    feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains = load_sources()
+    (feeds, tag_rules, competitor_sources, analyst_sources, blocked_domains,
+     client_required_phrases, client_company_aliases) = load_sources()
 
     con = connect_db()
     try:
@@ -445,6 +461,7 @@ def main() -> int:
         total_entries = 0
         skipped_excluded = 0
         skipped_notag = 0
+        skipped_company = 0
         failed_feeds: list[str] = []
 
         for feed in feeds:
@@ -479,6 +496,13 @@ def main() -> int:
                         skipped_excluded += 1
                         continue
 
+                    # Client feeds: the article must actually be about the company.
+                    if feed_type == "client" and not client_mentions_company(
+                        f"{title} {snippet}", feed.source, client_required_phrases, client_company_aliases
+                    ):
+                        skipped_company += 1
+                        continue
+
                     tags = infer_tags(f"{title} {snippet}", tag_rules)
 
                     # Auto-tag analyst articles that don't match any keyword rule
@@ -499,7 +523,7 @@ def main() -> int:
         print(
             f"Done. New: {new_count} | scanned: {total_entries} | "
             f"skipped excluded: {skipped_excluded} | skipped no-tag: {skipped_notag} | "
-            f"allowed_tags: {ALLOWED_TAGS}"
+            f"skipped wrong-company: {skipped_company} | allowed_tags: {ALLOWED_TAGS}"
         )
         if failed_feeds:
             print(f"[WARN] Failed feeds ({len(failed_feeds)}): {', '.join(failed_feeds)}")
