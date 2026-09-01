@@ -1,0 +1,265 @@
+{
+  "_comment": "Illustrative sample data for demo.py. Competitor items are invented examples of the KIND of thought leadership these firms publish — none of them are real articles. Client companies (Nordwind, Cantara, Veltena, Brenner) are entirely fictional. All URLs point to example.com.",
+  "signals": [
+    {
+      "source": "McKinsey_GBS",
+      "title": "How agentic AI is rewriting the GBS playbook",
+      "summary": "Argues that autonomous agents shift GBS from labor arbitrage toward outcome-based delivery models. Outlines a maturity path from task automation to end-to-end process ownership and names talent redeployment as the binding constraint.",
+      "url": "https://example.com/demo/mckinsey-agentic-gbs",
+      "tags": ["GBS", "Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 2
+    },
+    {
+      "source": "McKinsey_AI",
+      "title": "The state of AI agents in the enterprise: adoption outpaces governance",
+      "summary": "Survey-style piece finding that agent pilots are spreading faster than the control frameworks around them. Recommends pairing every deployment with a defined process owner and audit trail before scaling.",
+      "url": "https://example.com/demo/mckinsey-agent-governance",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 9
+    },
+    {
+      "source": "McKinsey_GBS",
+      "title": "From shared services to integrated business services: the next operating model",
+      "summary": "Positions integrated business services as the successor to function-by-function shared services. Emphasises cross-functional process towers and a single service management layer.",
+      "url": "https://example.com/demo/mckinsey-ibs-operating-model",
+      "tags": ["GBS", "Operating_Model"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 16
+    },
+    {
+      "source": "BCG_GCC",
+      "title": "GCCs as innovation engines: five moves for the next 24 months",
+      "summary": "Argues capability centers should take product ownership rather than ticket queues. Five recommended moves include embedding AI engineering pods and rotating global process owners into the center.",
+      "url": "https://example.com/demo/bcg-gcc-innovation",
+      "tags": ["GCC", "GBS"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 4
+    },
+    {
+      "source": "BCG_AI",
+      "title": "Agentic AI pilots stall without process redesign, BCG survey finds",
+      "summary": "Reports that a majority of surveyed agent pilots fail to scale because the surrounding process was left unchanged. Advocates redesigning the end-to-end flow before automating individual steps.",
+      "url": "https://example.com/demo/bcg-agent-pilots",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 11
+    },
+    {
+      "source": "Bain_OM",
+      "title": "Operating model design in the age of autonomous workflows",
+      "summary": "Framework piece on how autonomous workflows change spans, layers, and the role of middle management in service delivery organisations.",
+      "url": "https://example.com/demo/bain-autonomous-workflows",
+      "tags": ["Operating_Model", "Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 6
+    },
+    {
+      "source": "Bain_GBS",
+      "title": "Podcast: what CFOs get wrong about shared services",
+      "summary": "Conversational episode on common misconceptions about SSC economics. Light on new material; mostly restates established cost-to-serve arguments.",
+      "url": "https://example.com/demo/bain-ssc-podcast",
+      "tags": ["GBS"],
+      "feed_type": "competitor",
+      "score": 1,
+      "days_ago": 24
+    },
+    {
+      "source": "Deloitte_GBS",
+      "title": "Deloitte launches agentic AI suite for shared services operations",
+      "summary": "Product announcement: a packaged set of AI agents for invoice processing, journal preparation, and service desk triage aimed at GBS organisations. Signals a productised competitor offering in core finance operations.",
+      "url": "https://example.com/demo/deloitte-agentic-suite",
+      "tags": ["GBS", "Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 3
+    },
+    {
+      "source": "Deloitte_GCC",
+      "title": "GCC location strategy: cost is no longer the deciding factor",
+      "summary": "Analysis of location decision criteria shifting from labor cost toward talent depth, AI readiness, and regulatory stability. Includes a comparative scorecard approach.",
+      "url": "https://example.com/demo/deloitte-gcc-location",
+      "tags": ["GCC"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 13
+    },
+    {
+      "source": "Deloitte_AI",
+      "title": "Governance frameworks for autonomous agents in regulated functions",
+      "summary": "Outlines control objectives and audit evidence for agent-executed finance processes. Relevant background for controls-heavy transformation work.",
+      "url": "https://example.com/demo/deloitte-agent-governance",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 25
+    },
+    {
+      "source": "EY_GBS",
+      "title": "EY announces finance transformation alliance targeting GBS clients",
+      "summary": "Alliance announcement combining a major ERP vendor's platform with EY's GBS advisory practice. A direct go-to-market signal in the finance transformation space.",
+      "url": "https://example.com/demo/ey-gbs-alliance",
+      "tags": ["GBS", "Operating_Model"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 5
+    },
+    {
+      "source": "EY_AI",
+      "title": "Why finance functions pilot agents faster than they scale them",
+      "summary": "Thought-leadership piece on the pilot-to-production gap in finance AI. Attributes the gap to data foundations and process standardisation rather than model capability.",
+      "url": "https://example.com/demo/ey-agent-scaling",
+      "tags": ["Agentic_AI"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 18
+    },
+    {
+      "source": "KPMG_GBS",
+      "title": "Benchmarking the modern SSC: throughput, quality, experience",
+      "summary": "Benchmark methodology update adding employee and customer experience metrics to classic cost and productivity measures for shared service centers.",
+      "url": "https://example.com/demo/kpmg-ssc-benchmark",
+      "tags": ["GBS"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 12
+    },
+    {
+      "source": "KPMG_OM",
+      "title": "Webinar recap: target operating models for mid-market finance",
+      "summary": "Summary of a webinar on TOM design for mid-market CFOs. Introductory level; limited strategic signal.",
+      "url": "https://example.com/demo/kpmg-tom-webinar",
+      "tags": ["Operating_Model"],
+      "feed_type": "competitor",
+      "score": 1,
+      "days_ago": 22
+    },
+    {
+      "source": "PwC_AI",
+      "title": "PwC embeds AI agents across managed services delivery",
+      "summary": "Announces agent-augmented delivery across PwC's managed services contracts, with stated productivity gains reinvested into pricing. A structural signal for outsourcing economics.",
+      "url": "https://example.com/demo/pwc-managed-services-agents",
+      "tags": ["Agentic_AI", "Operating_Model"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 7
+    },
+    {
+      "source": "PwC_GCC",
+      "title": "India GCC market update: hiring stabilises after two hot years",
+      "summary": "Quarterly market note on GCC hiring volumes and attrition. Useful context, limited direct strategic implication.",
+      "url": "https://example.com/demo/pwc-gcc-update",
+      "tags": ["GCC"],
+      "feed_type": "competitor",
+      "score": 1,
+      "days_ago": 20
+    },
+    {
+      "source": "Accenture_AI",
+      "title": "Accenture reports rapid growth in agentic AI bookings for operations",
+      "summary": "Earnings-adjacent communication highlighting strong bookings for agent-based operations transformation. Confirms competitor traction in AI-led delivery at scale.",
+      "url": "https://example.com/demo/accenture-agentic-bookings",
+      "tags": ["Agentic_AI", "GBS"],
+      "feed_type": "competitor",
+      "score": 3,
+      "days_ago": 1
+    },
+    {
+      "source": "Accenture_GBS",
+      "title": "Reinventing global delivery: composite teams of people and agents",
+      "summary": "Describes a delivery model where human process experts supervise fleets of task agents. Positions the model as the successor to pyramid-based offshore delivery.",
+      "url": "https://example.com/demo/accenture-composite-teams",
+      "tags": ["GBS", "Operating_Model"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 10
+    },
+    {
+      "source": "Accenture_GCC",
+      "title": "Capability centers move up the value chain: from delivery to product",
+      "summary": "Trend piece on GCCs taking ownership of digital products and platforms rather than executing delegated tasks.",
+      "url": "https://example.com/demo/accenture-gcc-value-chain",
+      "tags": ["GCC"],
+      "feed_type": "competitor",
+      "score": 2,
+      "days_ago": 17
+    },
+    {
+      "source": "Nordwind_Finance",
+      "title": "Nordwind Industries announces new group CFO effective January",
+      "summary": "Leadership change at the top of the finance function. The incoming CFO arrives from a company known for a centralised GBS model — a common precursor to operating model review and a natural engagement window.",
+      "url": "https://example.com/demo/nordwind-cfo",
+      "tags": [],
+      "feed_type": "client",
+      "score": 3,
+      "days_ago": 3
+    },
+    {
+      "source": "Nordwind_GBS",
+      "title": "Nordwind to consolidate European back-office functions in Lisbon hub",
+      "summary": "Announces consolidation of finance and HR back-office activities into a single European hub. Signals an active shared services agenda with likely demand for transition and process design support.",
+      "url": "https://example.com/demo/nordwind-lisbon-hub",
+      "tags": ["GBS"],
+      "feed_type": "client",
+      "score": 3,
+      "days_ago": 12
+    },
+    {
+      "source": "Cantara_Finance",
+      "title": "Cantara Group launches group-wide ERP consolidation programme",
+      "summary": "Multi-year programme to consolidate regional ERP instances onto a single platform. Indicates budget committed to finance infrastructure and openness to transformation partners.",
+      "url": "https://example.com/demo/cantara-erp",
+      "tags": ["Operating_Model"],
+      "feed_type": "client",
+      "score": 2,
+      "days_ago": 8
+    },
+    {
+      "source": "Cantara_GBS",
+      "title": "Cantara Group evaluates captive center for analytics and finance ops",
+      "summary": "Reported evaluation of a captive capability center covering analytics and finance operations. Early-stage signal; location and scope not yet decided.",
+      "url": "https://example.com/demo/cantara-captive",
+      "tags": ["GCC"],
+      "feed_type": "client",
+      "score": 2,
+      "days_ago": 19
+    },
+    {
+      "source": "Veltena_Finance",
+      "title": "Veltena Pharma plans shared services expansion into Krakow",
+      "summary": "Expansion of the existing shared services footprint with a new Krakow site focused on record-to-report and procurement operations. Direct signal of GBS build-out with near-term advisory needs.",
+      "url": "https://example.com/demo/veltena-krakow",
+      "tags": ["GBS"],
+      "feed_type": "client",
+      "score": 3,
+      "days_ago": 6
+    },
+    {
+      "source": "Veltena_Finance",
+      "title": "Veltena Pharma treasury update: refinancing completed",
+      "summary": "Routine treasury communication on completed refinancing. No transformation angle visible.",
+      "url": "https://example.com/demo/veltena-treasury",
+      "tags": [],
+      "feed_type": "client",
+      "score": 1,
+      "days_ago": 23
+    },
+    {
+      "source": "Brenner_Finance",
+      "title": "Brenner Logistics flags cost programme alongside quarterly results",
+      "summary": "Quarterly results accompanied by a group-wide cost programme announcement. Cost pressure often precedes shared services and automation initiatives; worth monitoring for scope details.",
+      "url": "https://example.com/demo/brenner-cost-programme",
+      "tags": [],
+      "feed_type": "client",
+      "score": 2,
+      "days_ago": 15
+    }
+  ]
+}

@@ -18,6 +18,7 @@ moritz.jpg
 *.jpg
 *.jpeg
 *.png
+!docs/*.png
 
 # Python
 __pycache__/

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile check
+        run: python -m compileall -q *.py
+
+      - name: Build demo (no API key needed)
+        run: python demo.py
+
+      - name: Assert outputs exist
+        run: |
+          test -s output/DEMO/intelligence_explorer.html
+          test -s output/DEMO/newsletter_full.html
+          test -s output/DEMO/newsletter_block.txt
+          grep -q "Signal register" output/DEMO/intelligence_explorer.html
+          ! grep -q "{{" output/DEMO/newsletter_full.html
+          echo "Demo build OK"
+
+      - name: Upload demo artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-output
+          path: |
+            output/DEMO/intelligence_explorer.html
+            output/DEMO/newsletter_full.html

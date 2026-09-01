@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Intelligence Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --stock: #F4F4F1;
+      --paper: #FFFFFF;
+      --ink: #1A1E26;
+      --ink-2: #4C5361;
+      --ink-3: #8A8F9C;
+      --rule: #D9DAD5;
+      --rule-soft: #E8E9E4;
+      --accent: #27568C;
+      --accent-soft: #EAF0F7;
+      --client: #0E9F6E;
+      --client-soft: #E7F5EF;
+      --serif: 'Source Serif 4', Georgia, serif;
+      --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+      --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { background: var(--stock); }
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      line-height: 1.5;
+      background: var(--stock);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 1060px;
+      margin: 0 auto;
+      background: var(--paper);
+      min-height: 100vh;
+      border-left: 1px solid var(--rule);
+      border-right: 1px solid var(--rule);
+    }
+
+    /* ── Masthead ── */
+    .masthead {
+      padding: 26px 48px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .masthead-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-3);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .demo-chip {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--accent);
+      padding: 2px 8px;
+      border-radius: 2px;
+      margin-left: 10px;
+      vertical-align: 2px;
+    }
+
+    /* ── Headline (the answer) ── */
+    .lede {
+      padding: 14px 48px 26px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .lede h1 {
+      font-family: var(--serif);
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 600;
+      line-height: 1.18;
+      letter-spacing: -0.4px;
+      max-width: 21em;
+    }
+    .lede .deck {
+      margin-top: 10px;
+      font-size: 15px;
+      color: var(--ink-2);
+      max-width: 46em;
+    }
+
+    /* ── KPI strip ── */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--rule);
+    }
+    .kpi {
+      padding: 18px 24px 16px;
+      border-right: 1px solid var(--rule-soft);
+    }
+    .kpi:first-child { padding-left: 48px; }
+    .kpi:last-child { border-right: none; }
+    .kpi-value {
+      font-family: var(--serif);
+      font-size: 30px;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .kpi-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-top: 5px;
+    }
+
+    /* ── Exhibits ── */
+    .exhibits {
+      display: grid;
+      grid-template-columns: 5fr 7fr;
+      gap: 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .exhibit {
+      padding: 24px 32px 26px 48px;
+      min-width: 0;
+    }
+    .exhibit + .exhibit {
+      border-left: 1px solid var(--rule-soft);
+      padding-left: 32px;
+      padding-right: 48px;
+    }
+    .exhibit-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .exhibit-title {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 600;
+      margin-top: 4px;
+      margin-bottom: 18px;
+    }
+
+    /* Exhibit 1: bars */
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 22px;
+      height: 160px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--ink);
+    }
+    .bar-group { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .bars { display: flex; align-items: flex-end; gap: 3px; flex: 1; }
+    .bar {
+      width: 26px;
+      border-radius: 3px 3px 0 0;
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .bar-comp { background: var(--accent); }
+    .bar-client { background: var(--client); }
+    .bar-value {
+      position: absolute;
+      top: -18px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-2);
+    }
+    .bar-week {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: center;
+      margin-top: 7px;
+    }
+    .legend { display: flex; gap: 18px; margin-top: 12px; }
+    .legend-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--ink-2);
+    }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Exhibit 2: matrix */
+    .matrix-scroll { overflow-x: auto; }
+    .matrix { border-collapse: separate; border-spacing: 2px; width: 100%; }
+    .matrix th {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      font-weight: 500;
+      text-align: center;
+      padding: 0 6px 6px;
+      white-space: nowrap;
+    }
+    .mx-cluster {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      vertical-align: top;
+      padding: 5px 10px 0 0;
+      white-space: nowrap;
+    }
+    .mx-firm {
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+    .mx-cell {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      text-align: center;
+      min-width: 44px;
+      padding: 5px 0;
+      border-radius: 2px;
+    }
+    .mx-zero { color: var(--rule); background: transparent; }
+    .mx-total {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      text-align: center;
+      color: var(--ink-2);
+      padding: 5px 0 5px 8px;
+    }
+    .exhibit-note {
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-top: 12px;
+    }
+
+    /* ── Register ── */
+    .register-head {
+      padding: 26px 48px 0;
+    }
+    .register-head h2 {
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 600;
+    }
+    .register-sub { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+
+    .filters {
+      padding: 16px 48px 14px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      border-bottom: 1px solid var(--rule);
+      position: sticky;
+      top: 0;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(6px);
+      z-index: 40;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-label {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .filter-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pill {
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 4px 11px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--paper);
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: var(--paper);
+    }
+    .search-wrap { flex: 1; min-width: 200px; }
+    .search-input {
+      width: 100%;
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 6px 12px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .kbd-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-3);
+      margin-left: auto;
+      align-self: center;
+      white-space: nowrap;
+    }
+    .kbd {
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 1px 5px;
+      background: var(--stock);
+    }
+
+    .register { padding: 6px 48px 40px; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 20px 0 8px;
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .section-label .count { color: var(--ink-3); letter-spacing: 0.5px; }
+    .sec-comp { color: var(--accent); }
+    .sec-client { color: var(--client); }
+
+    .row {
+      border-bottom: 1px solid var(--rule-soft);
+      cursor: pointer;
+    }
+    .row-line {
+      display: grid;
+      grid-template-columns: 64px 168px 1fr 56px;
+      gap: 14px;
+      align-items: baseline;
+      padding: 11px 0;
+    }
+    .row:hover .row-title { color: var(--accent); }
+
+    .score {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-align: center;
+      padding: 2px 0;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+    .score-3 { background: var(--accent); color: var(--paper); }
+    .score-2 { background: var(--accent-soft); color: var(--accent); }
+    .score-1 { background: var(--stock); color: var(--ink-3); }
+
+    .row-firm {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-firm.competitor { color: var(--accent); }
+    .row-firm.client { color: var(--client); }
+    .row-firm .topic { color: var(--ink-3); }
+
+    .row-title {
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 1.4;
+      transition: color 0.1s;
+    }
+    .row-cw {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: right;
+    }
+
+    .row-detail {
+      display: none;
+      padding: 2px 0 16px 78px;
+      max-width: 720px;
+    }
+    .row.open .row-detail { display: block; }
+    .row.open { background: linear-gradient(to right, var(--accent) 2px, transparent 2px); }
+    .detail-summary {
+      font-family: var(--serif);
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: var(--ink-2);
+    }
+    .detail-meta { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+    .tagchip {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      color: var(--ink-2);
+    }
+    .source-link {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 1px;
+    }
+    .source-link:hover { opacity: 0.75; }
+
+    .empty-note {
+      padding: 40px 0;
+      text-align: center;
+      color: var(--ink-3);
+      font-family: var(--serif);
+      font-size: 16px;
+    }
+
+    /* ── Footer ── */
+    .foot {
+      border-top: 1px solid var(--ink);
+      padding: 20px 48px 28px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .foot-owner { display: flex; gap: 12px; align-items: center; }
+    .foot-name { font-size: 13px; font-weight: 600; }
+    .foot-role { font-size: 11.5px; color: var(--ink-2); }
+    .foot-mail {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .foot-method {
+      font-size: 10.5px;
+      color: var(--ink-3);
+      text-align: right;
+      max-width: 46em;
+      line-height: 1.6;
+    }
+
+    /* ── Tooltip ── */
+    .tip {
+      position: fixed;
+      pointer-events: none;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 2px;
+      z-index: 100;
+      display: none;
+      white-space: nowrap;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      .masthead, .lede, .register-head, .filters, .register, .foot { padding-left: 22px; padding-right: 22px; }
+      .exhibits { grid-template-columns: 1fr; }
+      .exhibit, .exhibit + .exhibit { padding: 22px; border-left: none; }
+      .exhibit + .exhibit { border-top: 1px solid var(--rule-soft); }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .kpi, .kpi:first-child { padding: 14px 22px; }
+      .row-line { grid-template-columns: 56px 1fr 48px; }
+      .row-firm { grid-column: 2; }
+      .row-title { grid-column: 1 / -1; }
+      .row-detail { padding-left: 0; }
+      .foot { flex-direction: column; }
+      .foot-method { text-align: left; }
+    }
+
+    @media print {
+      html, body { background: #fff; }
+      .page { border: none; max-width: none; }
+      .filters, .kbd-hint { display: none; }
+      .row-detail { display: block; }
+      .row { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div class="eyebrow">Competitor &amp; Client Intelligence <span class="demo-chip">Demo data</span></div>
+    <div class="masthead-meta">Edition 17 · Generated 01 September 2026 · Last 28 days</div>
+  </div>
+
+  <div class="lede">
+    <h1>Agentic AI leads competitor publishing; Accenture most active with 3 signals</h1>
+    <div class="deck">26 signals from 12 organisations in the last 28 days — 9 rated high relevance, 7 from client accounts.</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-value">26</div><div class="kpi-label">signals captured</div></div>
+<div class="kpi"><div class="kpi-value">9</div><div class="kpi-label">high relevance (★)</div></div>
+<div class="kpi"><div class="kpi-value">12</div><div class="kpi-label">organisations tracked</div></div>
+<div class="kpi"><div class="kpi-value">Accenture</div><div class="kpi-label">most active firm</div></div>
+  </div>
+
+  <div class="exhibits">
+    <div class="exhibit">
+      <div class="exhibit-eyebrow">Exhibit 1</div>
+      <div class="exhibit-title">Signal volume by calendar week</div>
+      <div class="chart" id="chart">
+        <div class="bar-group"><div class="bars"><div class="bar bar-comp" style="height:40px" data-tip="CW 32: 2 competitor signals"><span class="bar-value">2</span></div><div class="bar bar-client" style="height:20px" data-tip="CW 32: 1 client signal"><span class="bar-value">1</span></div></div><div class="bar-week">CW 32</div></div>
+<div class="bar-group"><div class="bars"><div class="bar bar-comp" style="height:100px" data-tip="CW 33: 5 competitor signals"><span class="bar-value">5</span></div><div class="bar bar-client" style="height:20px" data-tip="CW 33: 1 client signal"><span class="bar-value">1</span></div></div><div class="bar-week">CW 33</div></div>
+<div class="bar-group"><div class="bars"><div class="bar bar-comp" style="height:100px" data-tip="CW 34: 5 competitor signals"><span class="bar-value">5</span></div><div class="bar bar-client" style="height:40px" data-tip="CW 34: 2 client signals"><span class="bar-value">2</span></div></div><div class="bar-week">CW 34</div></div>
+<div class="bar-group"><div class="bars"><div class="bar bar-comp" style="height:120px" data-tip="CW 35: 6 competitor signals"><span class="bar-value">6</span></div><div class="bar bar-client" style="height:60px" data-tip="CW 35: 3 client signals"><span class="bar-value">3</span></div></div><div class="bar-week">CW 35</div></div>
+<div class="bar-group"><div class="bars"><div class="bar bar-comp" style="height:20px" data-tip="CW 36: 1 competitor signal"><span class="bar-value">1</span></div><div class="bar bar-client" style="height:2px" data-tip="CW 36: 0 client signals"></div></div><div class="bar-week">CW 36</div></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Competitor</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--client)"></span>Client</div>
+      </div>
+    </div>
+    <div class="exhibit">
+      <div class="exhibit-eyebrow">Exhibit 2</div>
+      <div class="exhibit-title">Where competitors publish — firm &times; theme</div>
+      <div class="matrix-scroll">
+        <table class="matrix"><thead><tr><th></th><th></th><th class="mx-col">GBS</th><th class="mx-col">GCC</th><th class="mx-col">Agentic AI</th><th class="mx-col">Operating model</th><th class="mx-col">Total</th></tr></thead><tbody><tr><td class="mx-cluster" rowspan="3">MBB</td><td class="mx-firm">McKinsey</td><td class="mx-cell" style="background:#27568C; color:#FFFFFF;">2</td><td class="mx-cell mx-zero">·</td><td class="mx-cell" style="background:#27568C; color:#FFFFFF;">2</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">5</td></tr><tr><td class="mx-firm">BCG</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell mx-zero">·</td><td class="mx-total">3</td></tr><tr><td class="mx-firm">Bain</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell mx-zero">·</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">3</td></tr><tr><td class="mx-cluster" rowspan="4">Big4</td><td class="mx-firm">Deloitte</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#27568C; color:#FFFFFF;">2</td><td class="mx-cell mx-zero">·</td><td class="mx-total">4</td></tr><tr><td class="mx-firm">EY</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell mx-zero">·</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">3</td></tr><tr><td class="mx-firm">PwC</td><td class="mx-cell mx-zero">·</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">3</td></tr><tr><td class="mx-firm">KPMG</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell mx-zero">·</td><td class="mx-cell mx-zero">·</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">2</td></tr><tr><td class="mx-cluster" rowspan="1">Accenture</td><td class="mx-firm">Accenture</td><td class="mx-cell" style="background:#27568C; color:#FFFFFF;">2</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-cell" style="background:#B3C9E1; color:#1A1E26;">1</td><td class="mx-total">5</td></tr></tbody></table>
+      </div>
+      <div class="exhibit-note">Competitor signals only; a signal may carry several themes. Darker cells = more signals.</div>
+    </div>
+  </div>
+
+  <div class="register-head">
+    <h2>Signal register</h2>
+    <div class="register-sub">Every captured signal in the window, ranked by relevance. Click a row for the full summary.</div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <div class="filter-label">Type</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="type" data-value="all">All</button>
+        <button class="pill" data-filter="type" data-value="competitor">Competitor</button>
+        <button class="pill" data-filter="type" data-value="client">Client</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Theme</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="tag" data-value="all">All</button>
+        <button class="pill" data-filter="tag" data-value="Agentic_AI">Agentic AI</button>
+<button class="pill" data-filter="tag" data-value="GBS">GBS</button>
+<button class="pill" data-filter="tag" data-value="GCC">GCC</button>
+<button class="pill" data-filter="tag" data-value="Operating_Model">Operating model</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Relevance</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="score" data-value="all">All</button>
+        <button class="pill" data-filter="score" data-value="3">&#9733; High</button>
+        <button class="pill" data-filter="score" data-value="2">Med</button>
+        <button class="pill" data-filter="score" data-value="1">Low</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Week</div>
+      <div class="filter-pills">
+        <button class="pill active" data-filter="week" data-value="all">All</button>
+        <button class="pill" data-filter="week" data-value="CW 36">CW 36</button>
+<button class="pill" data-filter="week" data-value="CW 35">CW 35</button>
+<button class="pill" data-filter="week" data-value="CW 34">CW 34</button>
+<button class="pill" data-filter="week" data-value="CW 33">CW 33</button>
+<button class="pill" data-filter="week" data-value="CW 32">CW 32</button>
+      </div>
+    </div>
+    <div class="filter-group search-wrap">
+      <div class="filter-label">Search</div>
+      <input class="search-input" id="search" type="text" placeholder="Titles, summaries, firms&hellip;">
+    </div>
+    <div class="kbd-hint"><span class="kbd">/</span> search &nbsp;<span class="kbd">Esc</span> reset</div>
+  </div>
+
+  <div class="register" id="register"></div>
+
+  <div class="foot">
+    <div class="foot-name">Generated by the <a class="foot-mail" href="https://github.com/morichtereur/gbs-intelligence-agent">GBS Intelligence Agent</a></div>
+    <div class="foot-method">
+      Method: public sources monitored via Google Alerts RSS &middot; relevance scored 1&ndash;3 and summarised by Claude &middot;
+      summaries are AI-generated and should be verified against the source before use.
+    </div>
+  </div>
+
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const SIGNALS = [{"source": "Accenture_AI", "company": "Accenture", "topic": "AI", "title": "Accenture reports rapid growth in agentic AI bookings for operations", "url": "https://example.com/demo/accenture-agentic-bookings", "tags": ["Agentic_AI", "GBS"], "feed_type": "competitor", "created_at": "2026-08-31T09:54:09+00:00", "cw": "CW 36", "week_label": "CW 36", "week_sort": "2026-36", "summary": "Earnings-adjacent communication highlighting strong bookings for agent-based operations transformation. Confirms competitor traction in AI-led delivery at scale.", "score": 3, "cluster": "Accenture"}, {"source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "How agentic AI is rewriting the GBS playbook", "url": "https://example.com/demo/mckinsey-agentic-gbs", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-30T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Argues that autonomous agents shift GBS from labor arbitrage toward outcome-based delivery models. Outlines a maturity path from task automation to end-to-end process ownership and names talent redeployment as the binding constraint.", "score": 3, "cluster": "MBB"}, {"source": "Deloitte_GBS", "company": "Deloitte", "topic": "GBS", "title": "Deloitte launches agentic AI suite for shared services operations", "url": "https://example.com/demo/deloitte-agentic-suite", "tags": ["GBS", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-29T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Product announcement: a packaged set of AI agents for invoice processing, journal preparation, and service desk triage aimed at GBS organisations. Signals a productised competitor offering in core finance operations.", "score": 3, "cluster": "Big4"}, {"source": "Nordwind_Finance", "company": "Nordwind", "topic": "Finance", "title": "Nordwind Industries announces new group CFO effective January", "url": "https://example.com/demo/nordwind-cfo", "tags": [], "feed_type": "client", "created_at": "2026-08-29T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Leadership change at the top of the finance function. The incoming CFO arrives from a company known for a centralised GBS model — a common precursor to operating model review and a natural engagement window.", "score": 3, "cluster": "Other"}, {"source": "BCG_GCC", "company": "BCG", "topic": "GCC", "title": "GCCs as innovation engines: five moves for the next 24 months", "url": "https://example.com/demo/bcg-gcc-innovation", "tags": ["GCC", "GBS"], "feed_type": "competitor", "created_at": "2026-08-28T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Argues capability centers should take product ownership rather than ticket queues. Five recommended moves include embedding AI engineering pods and rotating global process owners into the center.", "score": 3, "cluster": "MBB"}, {"source": "EY_GBS", "company": "EY", "topic": "GBS", "title": "EY announces finance transformation alliance targeting GBS clients", "url": "https://example.com/demo/ey-gbs-alliance", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-27T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Alliance announcement combining a major ERP vendor's platform with EY's GBS advisory practice. A direct go-to-market signal in the finance transformation space.", "score": 3, "cluster": "Big4"}, {"source": "Bain_OM", "company": "Bain", "topic": "OM", "title": "Operating model design in the age of autonomous workflows", "url": "https://example.com/demo/bain-autonomous-workflows", "tags": ["Operating_Model", "Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-26T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Framework piece on how autonomous workflows change spans, layers, and the role of middle management in service delivery organisations.", "score": 2, "cluster": "MBB"}, {"source": "Veltena_Finance", "company": "Veltena", "topic": "Finance", "title": "Veltena Pharma plans shared services expansion into Krakow", "url": "https://example.com/demo/veltena-krakow", "tags": ["GBS"], "feed_type": "client", "created_at": "2026-08-26T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Expansion of the existing shared services footprint with a new Krakow site focused on record-to-report and procurement operations. Direct signal of GBS build-out with near-term advisory needs.", "score": 3, "cluster": "Other"}, {"source": "PwC_AI", "company": "PwC", "topic": "AI", "title": "PwC embeds AI agents across managed services delivery", "url": "https://example.com/demo/pwc-managed-services-agents", "tags": ["Agentic_AI", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-25T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Announces agent-augmented delivery across PwC's managed services contracts, with stated productivity gains reinvested into pricing. A structural signal for outsourcing economics.", "score": 3, "cluster": "Big4"}, {"source": "Cantara_Finance", "company": "Cantara", "topic": "Finance", "title": "Cantara Group launches group-wide ERP consolidation programme", "url": "https://example.com/demo/cantara-erp", "tags": ["Operating_Model"], "feed_type": "client", "created_at": "2026-08-24T09:54:09+00:00", "cw": "CW 35", "week_label": "CW 35", "week_sort": "2026-35", "summary": "Multi-year programme to consolidate regional ERP instances onto a single platform. Indicates budget committed to finance infrastructure and openness to transformation partners.", "score": 2, "cluster": "Other"}, {"source": "McKinsey_AI", "company": "McKinsey", "topic": "AI", "title": "The state of AI agents in the enterprise: adoption outpaces governance", "url": "https://example.com/demo/mckinsey-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-23T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Survey-style piece finding that agent pilots are spreading faster than the control frameworks around them. Recommends pairing every deployment with a defined process owner and audit trail before scaling.", "score": 2, "cluster": "MBB"}, {"source": "Accenture_GBS", "company": "Accenture", "topic": "GBS", "title": "Reinventing global delivery: composite teams of people and agents", "url": "https://example.com/demo/accenture-composite-teams", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-22T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Describes a delivery model where human process experts supervise fleets of task agents. Positions the model as the successor to pyramid-based offshore delivery.", "score": 2, "cluster": "Accenture"}, {"source": "BCG_AI", "company": "BCG", "topic": "AI", "title": "Agentic AI pilots stall without process redesign, BCG survey finds", "url": "https://example.com/demo/bcg-agent-pilots", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-21T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Reports that a majority of surveyed agent pilots fail to scale because the surrounding process was left unchanged. Advocates redesigning the end-to-end flow before automating individual steps.", "score": 2, "cluster": "MBB"}, {"source": "KPMG_GBS", "company": "KPMG", "topic": "GBS", "title": "Benchmarking the modern SSC: throughput, quality, experience", "url": "https://example.com/demo/kpmg-ssc-benchmark", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-20T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Benchmark methodology update adding employee and customer experience metrics to classic cost and productivity measures for shared service centers.", "score": 2, "cluster": "Big4"}, {"source": "Nordwind_GBS", "company": "Nordwind", "topic": "GBS", "title": "Nordwind to consolidate European back-office functions in Lisbon hub", "url": "https://example.com/demo/nordwind-lisbon-hub", "tags": ["GBS"], "feed_type": "client", "created_at": "2026-08-20T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Announces consolidation of finance and HR back-office activities into a single European hub. Signals an active shared services agenda with likely demand for transition and process design support.", "score": 3, "cluster": "Other"}, {"source": "Deloitte_GCC", "company": "Deloitte", "topic": "GCC", "title": "GCC location strategy: cost is no longer the deciding factor", "url": "https://example.com/demo/deloitte-gcc-location", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-19T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Analysis of location decision criteria shifting from labor cost toward talent depth, AI readiness, and regulatory stability. Includes a comparative scorecard approach.", "score": 2, "cluster": "Big4"}, {"source": "Brenner_Finance", "company": "Brenner", "topic": "Finance", "title": "Brenner Logistics flags cost programme alongside quarterly results", "url": "https://example.com/demo/brenner-cost-programme", "tags": [], "feed_type": "client", "created_at": "2026-08-17T09:54:09+00:00", "cw": "CW 34", "week_label": "CW 34", "week_sort": "2026-34", "summary": "Quarterly results accompanied by a group-wide cost programme announcement. Cost pressure often precedes shared services and automation initiatives; worth monitoring for scope details.", "score": 2, "cluster": "Other"}, {"source": "McKinsey_GBS", "company": "McKinsey", "topic": "GBS", "title": "From shared services to integrated business services: the next operating model", "url": "https://example.com/demo/mckinsey-ibs-operating-model", "tags": ["GBS", "Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-16T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Positions integrated business services as the successor to function-by-function shared services. Emphasises cross-functional process towers and a single service management layer.", "score": 2, "cluster": "MBB"}, {"source": "Accenture_GCC", "company": "Accenture", "topic": "GCC", "title": "Capability centers move up the value chain: from delivery to product", "url": "https://example.com/demo/accenture-gcc-value-chain", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-15T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Trend piece on GCCs taking ownership of digital products and platforms rather than executing delegated tasks.", "score": 2, "cluster": "Accenture"}, {"source": "EY_AI", "company": "EY", "topic": "AI", "title": "Why finance functions pilot agents faster than they scale them", "url": "https://example.com/demo/ey-agent-scaling", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-14T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Thought-leadership piece on the pilot-to-production gap in finance AI. Attributes the gap to data foundations and process standardisation rather than model capability.", "score": 2, "cluster": "Big4"}, {"source": "Cantara_GBS", "company": "Cantara", "topic": "GBS", "title": "Cantara Group evaluates captive center for analytics and finance ops", "url": "https://example.com/demo/cantara-captive", "tags": ["GCC"], "feed_type": "client", "created_at": "2026-08-13T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Reported evaluation of a captive capability center covering analytics and finance operations. Early-stage signal; location and scope not yet decided.", "score": 2, "cluster": "Other"}, {"source": "PwC_GCC", "company": "PwC", "topic": "GCC", "title": "India GCC market update: hiring stabilises after two hot years", "url": "https://example.com/demo/pwc-gcc-update", "tags": ["GCC"], "feed_type": "competitor", "created_at": "2026-08-12T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Quarterly market note on GCC hiring volumes and attrition. Useful context, limited direct strategic implication.", "score": 1, "cluster": "Big4"}, {"source": "KPMG_OM", "company": "KPMG", "topic": "OM", "title": "Webinar recap: target operating models for mid-market finance", "url": "https://example.com/demo/kpmg-tom-webinar", "tags": ["Operating_Model"], "feed_type": "competitor", "created_at": "2026-08-10T09:54:09+00:00", "cw": "CW 33", "week_label": "CW 33", "week_sort": "2026-33", "summary": "Summary of a webinar on TOM design for mid-market CFOs. Introductory level; limited strategic signal.", "score": 1, "cluster": "Big4"}, {"source": "Veltena_Finance", "company": "Veltena", "topic": "Finance", "title": "Veltena Pharma treasury update: refinancing completed", "url": "https://example.com/demo/veltena-treasury", "tags": [], "feed_type": "client", "created_at": "2026-08-09T09:54:09+00:00", "cw": "CW 32", "week_label": "CW 32", "week_sort": "2026-32", "summary": "Routine treasury communication on completed refinancing. No transformation angle visible.", "score": 1, "cluster": "Other"}, {"source": "Bain_GBS", "company": "Bain", "topic": "GBS", "title": "Podcast: what CFOs get wrong about shared services", "url": "https://example.com/demo/bain-ssc-podcast", "tags": ["GBS"], "feed_type": "competitor", "created_at": "2026-08-08T09:54:09+00:00", "cw": "CW 32", "week_label": "CW 32", "week_sort": "2026-32", "summary": "Conversational episode on common misconceptions about SSC economics. Light on new material; mostly restates established cost-to-serve arguments.", "score": 1, "cluster": "MBB"}, {"source": "Deloitte_AI", "company": "Deloitte", "topic": "AI", "title": "Governance frameworks for autonomous agents in regulated functions", "url": "https://example.com/demo/deloitte-agent-governance", "tags": ["Agentic_AI"], "feed_type": "competitor", "created_at": "2026-08-07T09:54:09+00:00", "cw": "CW 32", "week_label": "CW 32", "week_sort": "2026-32", "summary": "Outlines control objectives and audit evidence for agent-executed finance processes. Relevant background for controls-heavy transformation work.", "score": 2, "cluster": "Big4"}];
+
+const SCORE_LABEL = { 3: '★ HIGH', 2: 'MED', 1: 'LOW' };
+
+let filters = { type: 'all', tag: 'all', score: 'all', week: 'all', search: '' };
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function matches(s) {
+  if (filters.type !== 'all' && s.feed_type !== filters.type) return false;
+  if (filters.tag !== 'all' && !s.tags.includes(filters.tag)) return false;
+  if (filters.score !== 'all' && String(s.score) !== filters.score) return false;
+  if (filters.week !== 'all' && s.week_label !== filters.week) return false;
+  if (filters.search) {
+    const q = filters.search.toLowerCase();
+    if (!(s.title + ' ' + s.summary + ' ' + s.company + ' ' + s.topic).toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+
+function rowHtml(s) {
+  const firm = escHtml(s.company) + (s.topic ? ' <span class="topic">&middot; ' + escHtml(s.topic) + '</span>' : '');
+  const tags = s.tags.map(t => '<span class="tagchip">' + escHtml(t.replace(/_/g, ' ')) + '</span>').join('');
+  return '<div class="row">' +
+    '<div class="row-line">' +
+      '<span class="score score-' + s.score + '">' + (SCORE_LABEL[s.score] || s.score) + '</span>' +
+      '<span class="row-firm ' + s.feed_type + '">' + firm + '</span>' +
+      '<span class="row-title">' + escHtml(s.title) + '</span>' +
+      '<span class="row-cw">' + escHtml(s.cw) + '</span>' +
+    '</div>' +
+    '<div class="row-detail">' +
+      '<div class="detail-summary">' + escHtml(s.summary || 'No summary available.') + '</div>' +
+      '<div class="detail-meta">' + tags +
+        '<a class="source-link" href="' + escHtml(s.url) + '" target="_blank" rel="noopener">Read the source &rarr;</a>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function sortSignals(list) {
+  return list.slice().sort((a, b) => (b.score - a.score) || (a.created_at < b.created_at ? 1 : -1));
+}
+
+function render() {
+  const el = document.getElementById('register');
+  const visible = SIGNALS.filter(matches);
+
+  if (!visible.length) {
+    el.innerHTML = '<div class="empty-note">No signals match the current filters.</div>';
+    return;
+  }
+
+  const comp = sortSignals(visible.filter(s => s.feed_type === 'competitor'));
+  const cli  = sortSignals(visible.filter(s => s.feed_type === 'client'));
+
+  let html = '';
+  if (comp.length) {
+    html += '<div class="section-label sec-comp"><span>Competitor intelligence</span><span class="count">' + comp.length + '</span></div>';
+    html += comp.map(rowHtml).join('');
+  }
+  if (cli.length) {
+    html += '<div class="section-label sec-client"><span>Client signals</span><span class="count">' + cli.length + '</span></div>';
+    html += cli.map(rowHtml).join('');
+  }
+  el.innerHTML = html;
+}
+
+document.getElementById('register').addEventListener('click', e => {
+  if (e.target.closest('a')) return;
+  const row = e.target.closest('.row');
+  if (row) row.classList.toggle('open');
+});
+
+document.querySelectorAll('.pill[data-filter]').forEach(pill => {
+  pill.addEventListener('click', () => {
+    const ft = pill.dataset.filter;
+    document.querySelectorAll('.pill[data-filter="' + ft + '"]').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    filters[ft] = pill.dataset.value;
+    render();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  filters.search = e.target.value.trim();
+  render();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    filters = { type: 'all', tag: 'all', score: 'all', week: 'all', search: '' };
+    document.getElementById('search').value = '';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.pill[data-value="all"]').forEach(p => p.classList.add('active'));
+    render();
+  }
+  if (e.key === '/' && document.activeElement !== document.getElementById('search')) {
+    e.preventDefault();
+    document.getElementById('search').focus();
+  }
+});
+
+// Bar tooltips
+const tip = document.getElementById('tip');
+document.querySelectorAll('.bar[data-tip]').forEach(bar => {
+  bar.addEventListener('mousemove', e => {
+    tip.textContent = bar.dataset.tip;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 12) + 'px';
+    tip.style.top = (e.clientY - 28) + 'px';
+  });
+  bar.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+});
+
+render();
+</script>
+</body>
+</html>
