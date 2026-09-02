@@ -28,6 +28,18 @@ FEEDBACK_EMAIL = os.getenv("INTEL_FEEDBACK_EMAIL", CONTACT_EMAIL).strip()
 SUMMARY_MAX_CHARS = 380
 FALLBACK_SUMMARY = "No AI summary available. Please open the source for details."
 
+# Same optional theme display names the dashboard uses ("tag_labels" in
+# sources.json); tags not listed fall back to underscores-to-spaces.
+TAG_LABEL_OVERRIDES: dict[str, str] = {}
+try:
+    import json as _json
+    with open(os.getenv("INTEL_SOURCES_PATH", "sources.json"), encoding="utf-8") as _f:
+        for _k, _v in _json.load(_f).get("tag_labels", {}).items():
+            if not _k.startswith("_") and isinstance(_v, str):
+                TAG_LABEL_OVERRIDES[_k] = _v
+except Exception:
+    pass
+
 
 def window_iso() -> tuple[str, str]:
     end = datetime.now(timezone.utc)
@@ -100,7 +112,7 @@ def _tag_badges(tags_str: str) -> str:
         return ""
     return " ".join(
         f'<span style="background:#F0F0F8; color:#555; font-size:10px; padding:2px 7px; '
-        f'border-radius:3px; margin-right:4px; display:inline-block;">{escape(t.replace("_", " "))}</span>'
+        f'border-radius:3px; margin-right:4px; display:inline-block;">{escape(TAG_LABEL_OVERRIDES.get(t, t.replace("_", " ")))}</span>'
         for t in tag_list
     )
 

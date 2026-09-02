@@ -99,6 +99,15 @@ def favicon_img(icon: str, size_px: int = 14, cls: str = "favicon") -> str:
         f'alt="" width="{size_px}" height="{size_px}" loading="lazy">'
     )
 
+# Tags kept out of the firm x theme matrix (still available as register
+# filters). Analyst_Research is a fallback bucket, not an offering theme —
+# its volume would dominate the heat scale and widen the exhibit.
+MATRIX_EXCLUDE = {
+    t.strip()
+    for t in os.getenv("INTEL_MATRIX_EXCLUDE", "Analyst_Research").split(",")
+    if t.strip()
+}
+
 # Sequential single-hue ramp (light -> dark) for the firm x theme matrix.
 HEAT_RAMP = ["#F1F5FA", "#D9E4F0", "#B3C9E1", "#82A6CB", "#4F7BAA", "#27568C"]
 
@@ -232,7 +241,7 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
     """Competitor and analyst signals: rows = firms (grouped by cluster), cols = themes."""
     comp = [s for s in signals if s["feed_type"] in ("competitor", "analyst")]
     col_counter: Counter[str] = Counter(t for s in comp for t in s["tags"])
-    columns = [t for t in TAG_LABELS if t in col_counter]
+    columns = [t for t in TAG_LABELS if t in col_counter and t not in MATRIX_EXCLUDE]
 
     cells: dict[str, Counter] = {}
     clusters: dict[str, str] = {}
@@ -248,12 +257,17 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
 
     rows = []
     for firm, counter in cells.items():
+        total = sum(counter.get(t, 0) for t in columns)
+        if total == 0:
+            # A firm whose signals carry only excluded tags has no row;
+            # its articles remain in the register below.
+            continue
         rows.append({
             "firm": firm,
             "icon_url": icons.get(firm, ""),
             "cluster": clusters.get(firm, "Other"),
             "counts": [counter.get(t, 0) for t in columns],
-            "total": sum(counter.get(t, 0) for t in columns),
+            "total": total,
         })
     rows.sort(key=lambda r: (
         CLUSTER_ORDER.index(r["cluster"]) if r["cluster"] in CLUSTER_ORDER else len(CLUSTER_ORDER),
@@ -433,6 +447,17 @@ def render_weekly(counts: list[tuple[str, int]]) -> str:
     )
 
 
+def matrix_note_extra(signals: list[dict]) -> str:
+    """Footnote sentence when excluded tags are present in the window."""
+    present = sorted(
+        {t for s in signals for t in s["tags"]} & MATRIX_EXCLUDE
+    )
+    if not present:
+        return ""
+    labels = ", ".join(tag_label(t) for t in present)
+    return f" {escape(labels)} appears as a filter below, not as a matrix column."
+
+
 def render_exhibit2(counts: list[tuple[str, int]]) -> str:
     strip = render_weekly(counts)
     if not strip:
@@ -509,6 +534,7 @@ def build_html(signals: list[dict]) -> str:
         "__MATRIX_TITLE__": escape(matrix_action_title(columns, mx_rows)),
         "__MATRIX__": render_matrix(columns, mx_rows),
         "__N_SIGNALS__": str(len(signals)),
+        "__MATRIX_NOTE_EXTRA__": matrix_note_extra(signals),
         "__EXHIBIT2__": render_exhibit2(week_counts),
         "__TAG_PILLS__": tag_pills,
         "__FOOTER_IDENTITY__": render_footer(),
@@ -905,7 +931,7 @@ HTML_TEMPLATE = r"""<!doctype html>
     <div class="matrix-scroll">
       __MATRIX__
     </div>
-    <div class="exhibit-note">n = __N_SIGNALS__ signals; a signal may carry several themes. Darker cells = more signals. Click a firm, theme, or cell to filter the register below.</div>
+    <div class="exhibit-note">n = __N_SIGNALS__ signals; a signal may carry several themes. Darker cells = more signals. Click a firm, theme, or cell to filter the register below.__MATRIX_NOTE_EXTRA__</div>
   </div>
 
   __EXHIBIT2__
