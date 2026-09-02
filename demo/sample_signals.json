@@ -1,5 +1,5 @@
 {
-  "_comment": "Sample data for demo.py — quality over quantity. Every competitor item is a REAL publication or announcement: title, URL, and publication date (>= 2026-07-01) verified live on 2026-09-01; days_ago matches the actual publication date. Summaries are short condensations in the pipeline's style. Client companies (Nordwind, Cantara, Veltena, Brenner) are entirely fictional and appear only in the newsletter demo, never in the dashboard.",
+  "_comment": "Sample data for demo.py — quality over quantity. Every competitor item is a REAL publication or announcement: title, URL, and publication date (>= 2026-07-01) verified live on 2026-09-01; 'published' is the actual publication date (client items: fictional, dated within the same period). Summaries are short condensations in the pipeline's style. Client companies (Nordwind, Cantara, Veltena, Brenner) are entirely fictional and appear only in the newsletter demo, never in the dashboard.",
   "signals": [
     {
       "source": "McKinsey_AI",
@@ -11,8 +11,8 @@
       ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 7,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-08-25"
     },
     {
       "source": "McKinsey_AI",
@@ -25,8 +25,8 @@
       ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 25,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-08-07"
     },
     {
       "source": "Deloitte_AI",
@@ -39,8 +39,8 @@
       ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 20,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-08-12"
     },
     {
       "source": "Deloitte_GBS",
@@ -53,8 +53,8 @@
       ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 40,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-07-23"
     },
     {
       "source": "PwC_AI",
@@ -66,8 +66,8 @@
       ],
       "feed_type": "competitor",
       "score": 3,
-      "days_ago": 48,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-07-15"
     },
     {
       "source": "KPMG_AI",
@@ -79,8 +79,8 @@
       ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 36,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-07-27"
     },
     {
       "source": "Accenture_AI",
@@ -92,8 +92,8 @@
       ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 56,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-07-07"
     },
     {
       "source": "EY_GCC",
@@ -105,8 +105,8 @@
       ],
       "feed_type": "competitor",
       "score": 2,
-      "days_ago": 46,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-07-17"
     },
     {
       "source": "SSON_AI",
@@ -119,8 +119,8 @@
       ],
       "feed_type": "analyst",
       "score": 2,
-      "days_ago": 6,
-      "signal_type": "research"
+      "signal_type": "research",
+      "published": "2026-08-26"
     },
     {
       "source": "Nordwind_Finance",
@@ -130,8 +130,8 @@
       "tags": [],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 3,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-08-29"
     },
     {
       "source": "Nordwind_GBS",
@@ -143,8 +143,8 @@
       ],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 12,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-08-20"
     },
     {
       "source": "Cantara_Finance",
@@ -156,8 +156,8 @@
       ],
       "feed_type": "client",
       "score": 2,
-      "days_ago": 8,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-08-24"
     },
     {
       "source": "Veltena_Finance",
@@ -169,8 +169,8 @@
       ],
       "feed_type": "client",
       "score": 3,
-      "days_ago": 6,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-08-26"
     },
     {
       "source": "Brenner_Finance",
@@ -180,8 +180,8 @@
       "tags": [],
       "feed_type": "client",
       "score": 2,
-      "days_ago": 15,
-      "signal_type": "move"
+      "signal_type": "move",
+      "published": "2026-08-17"
     }
   ]
 }

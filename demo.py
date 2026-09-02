@@ -55,7 +55,7 @@ def seed_database() -> int:
 
     now = datetime.now(timezone.utc)
     for s in signals:
-        ts = (now - timedelta(days=s["days_ago"], hours=3)).replace(microsecond=0).isoformat()
+        ts = f'{s["published"]}T08:00:00+00:00'
         article_id = sha1(f"{s['source']}|{s['url']}".encode()).hexdigest()
         cur.execute(
             "INSERT INTO articles VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -83,17 +83,25 @@ def main() -> None:
     count = seed_database()
     print(f"[demo] Seeded {count} sample signals into {DB_PATH}")
 
+    period_start = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    window_days = max(63, (datetime.now(timezone.utc) - period_start).days + 2)
+
     env = {
         **os.environ,
         "INTEL_DB_PATH": str(DB_PATH),
         "INTEL_OUT_DIR": str(OUT_DIR),
         "INTEL_SOURCES_PATH": str(HERE / "sources.example.json"),
         "INTEL_TEMPLATE_PATH": str(HERE / "templates" / "newsletter_template.html"),
-        "INTEL_WINDOW_DAYS": "63",
-        "INTEL_DASHBOARD_WEEKS": "9",
+        "INTEL_WINDOW_DAYS": str(window_days),
+        "INTEL_DASHBOARD_WEEKS": str((window_days // 7) + 1),
         "INTEL_MIN_SCORE": "3",
         "INTEL_EDITION": "17",
         "INTEL_DEMO_LABEL": "Demo data",
+        "INTEL_PERIOD_LABEL": "July \u2013 August 2026",
+        "INTEL_OG_IMAGE": "https://morichtereur.github.io/gbs-intelligence-agent/og-card.png",
+        "INTEL_OG_URL": "https://morichtereur.github.io/gbs-intelligence-agent/",
+        "INTEL_OWNER_NAME": "Moritz Richter",
+        "INTEL_OWNER_URL": "https://morichtereur.github.io/",
         "INTEL_ORG_NAME": "GBS Intelligence Agent — Demo",
         "INTEL_FEEDBACK_EMAIL": "feedback@example.com",
     }

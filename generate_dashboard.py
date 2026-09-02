@@ -21,7 +21,16 @@ BRAND = os.getenv("INTEL_BRAND", "Competitor Intelligence")
 OWNER_NAME = os.getenv("INTEL_OWNER_NAME", "").strip()
 OWNER_TITLE = os.getenv("INTEL_OWNER_TITLE", "").strip()
 OWNER_EMAIL = os.getenv("INTEL_OWNER_EMAIL", "").strip()
+OWNER_URL = os.getenv("INTEL_OWNER_URL", "").strip()
 DEMO_LABEL = os.getenv("INTEL_DEMO_LABEL", "").strip()
+
+# Fixed period label (e.g. "July - August 2026") replaces the rolling
+# "Last N days" wording so a published snapshot stays truthful as it ages.
+PERIOD_LABEL = os.getenv("INTEL_PERIOD_LABEL", "").strip()
+
+# Social-card metadata for a publicly hosted dashboard (absolute URLs).
+OG_IMAGE = os.getenv("INTEL_OG_IMAGE", "").strip()
+OG_URL = os.getenv("INTEL_OG_URL", "").strip()
 
 # Themes follow the CFO-agenda pillars: strategy, delivery (GBS/GCC),
 # steering (Controlling & FP&A), with agentic AI as the cross-cutting layer.
@@ -314,7 +323,9 @@ def compute_headline(signals: list[dict]) -> tuple[str, str]:
     n_firms = len({s["company"] for s in signals})
 
     deck = (
-        f"{len(signals)} signals from {n_firms} firms in the last {WINDOW_WEEKS * 7} days — "
+        f"{len(signals)} signals from {n_firms} firms in "
+        + (PERIOD_LABEL if PERIOD_LABEL else f"the last {WINDOW_WEEKS * 7} days")
+        + " — "
         f"{high} rated high relevance."
     )
 
@@ -431,6 +442,11 @@ def render_footer() -> str:
             f'<a class="foot-mail" href="mailto:{escape(OWNER_EMAIL)}">{escape(OWNER_EMAIL)}</a>'
             if OWNER_EMAIL else ""
         )
+        link_label = urlparse(OWNER_URL).netloc or OWNER_URL
+        link_html = (
+            f'<a class="foot-mail" href="{escape(OWNER_URL)}">{escape(link_label)}</a>'
+            if OWNER_URL else ""
+        )
         return (
             f'<div class="foot-owner">{photo}<div>'
             f'<div class="foot-name">{escape(OWNER_NAME)}</div>{title_html}{email_html}</div></div>'
@@ -460,6 +476,15 @@ def build_html(signals: list[dict]) -> str:
     )
 
     html = HTML_TEMPLATE
+    og_lines = []
+    if OG_IMAGE:
+        og_lines.append(f'\n  <meta property="og:image" content="{escape(OG_IMAGE)}">')
+        og_lines.append(f'\n  <meta name="twitter:card" content="summary_large_image">')
+        og_lines.append(f'\n  <meta name="twitter:image" content="{escape(OG_IMAGE)}">')
+    if OG_URL:
+        og_lines.append(f'\n  <meta property="og:url" content="{escape(OG_URL)}">')
+    og_extra = "".join(og_lines)
+
     replacements = {
         "__BRAND__": escape(BRAND),
         "__EDITION__": edition_html,
@@ -475,6 +500,8 @@ def build_html(signals: list[dict]) -> str:
         "__TAG_PILLS__": tag_pills,
         "__FOOTER_IDENTITY__": render_footer(),
         "__SIGNALS_JSON__": signals_json,
+        "__WINDOW_LABEL__": escape(PERIOD_LABEL) if PERIOD_LABEL else f"Last {WINDOW_WEEKS * 7} days",
+        "__OG_EXTRA__": og_extra,
         "__TAG_LABELS_JSON__": json.dumps(TAG_LABELS, ensure_ascii=False),
     }
     for token, value in replacements.items():
@@ -491,7 +518,7 @@ HTML_TEMPLATE = r"""<!doctype html>
   <meta name="description" content="__BRAND__ — weekly competitor and analyst signals, scored for relevance and summarised automatically. Firm-by-theme exhibit, signal flow, and a filterable register.">
   <meta property="og:title" content="__BRAND__ — Intelligence Explorer">
   <meta property="og:description" content="Weekly competitor and analyst signals, scored for relevance and summarised automatically.">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="website">__OG_EXTRA__
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -851,7 +878,7 @@ HTML_TEMPLATE = r"""<!doctype html>
 
   <div class="masthead">
     <div class="brand">__BRAND__ __DEMO_CHIP__</div>
-    <div class="masthead-meta">__EDITION__Generated __DATE__ · Last __WINDOW_DAYS__ days</div>
+    <div class="masthead-meta">__EDITION__Generated __DATE__ · __WINDOW_LABEL__</div>
   </div>
 
   <div class="lede">
