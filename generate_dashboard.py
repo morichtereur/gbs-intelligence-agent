@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 from collections import Counter
 from datetime import datetime, timedelta, timezone
@@ -110,6 +111,45 @@ MATRIX_EXCLUDE = {
 
 # Sequential single-hue ramp (light -> dark) for the firm x theme matrix.
 HEAT_RAMP = ["#F1F5FA", "#D9E4F0", "#B3C9E1", "#82A6CB", "#4F7BAA", "#27568C"]
+
+# Default webfonts; a theme may swap them (see below).
+FONTS_HREF = (
+    "https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600"
+    "&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+)
+
+# Instances may restyle the page without touching code via a "theme" object in
+# sources.json:
+#   "theme": {
+#     "vars":      {"accent": "#2E2E38", "serif": "'Overpass', sans-serif", ...},
+#     "fonts_href": "https://fonts.googleapis.com/css2?family=Overpass...",
+#     "heat_ramp": ["#F2F2F5", ..., "#2E2E38"]
+#   }
+# "vars" keys are CSS custom-property names without the leading "--"; unknown
+# keys are simply extra variables. Absent keys keep the built-in design.
+THEME_CSS = ""
+try:
+    with open(SOURCES_PATH, encoding="utf-8") as _f:
+        _theme = json.load(_f).get("theme", {})
+    _decls = []
+    for _k, _v in _theme.get("vars", {}).items():
+        if re.fullmatch(r"[a-z][a-z0-9-]*", _k) and re.fullmatch(r"[^;{}<>]+", str(_v)):
+            _decls.append(f"--{_k}: {_v};")
+    if _decls:
+        THEME_CSS = "<style>:root { " + " ".join(_decls) + " }</style>"
+    if isinstance(_theme.get("fonts_href"), str) and _theme["fonts_href"].startswith(
+        "https://fonts.googleapis.com/"
+    ):
+        FONTS_HREF = _theme["fonts_href"]
+    _ramp = _theme.get("heat_ramp")
+    if (
+        isinstance(_ramp, list)
+        and len(_ramp) >= 3
+        and all(re.fullmatch(r"#[0-9A-Fa-f]{6}", str(c)) for c in _ramp)
+    ):
+        HEAT_RAMP = [str(c) for c in _ramp]
+except Exception:
+    pass
 
 
 def tag_label(tag: str) -> str:
@@ -542,6 +582,8 @@ def build_html(signals: list[dict]) -> str:
         "__WINDOW_LABEL__": escape(PERIOD_LABEL) if PERIOD_LABEL else f"Last {WINDOW_WEEKS * 7} days",
         "__OG_EXTRA__": og_extra,
         "__TAG_LABELS_JSON__": json.dumps(TAG_LABELS, ensure_ascii=False),
+        "__FONTS_HREF__": escape(FONTS_HREF),
+        "__THEME_CSS__": THEME_CSS,
     }
     for token, value in replacements.items():
         html = html.replace(token, value)
@@ -559,7 +601,7 @@ HTML_TEMPLATE = r"""<!doctype html>
   <meta property="og:description" content="Weekly competitor and analyst signals, scored for relevance and summarised automatically.">
   <meta property="og:type" content="website">__OG_EXTRA__
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="__FONTS_HREF__" rel="stylesheet">
   <style>
     :root {
       --stock: #F4F4F1;
@@ -572,6 +614,15 @@ HTML_TEMPLATE = r"""<!doctype html>
       --accent: #27568C;
       --serif: 'Source Serif 4', Georgia, serif;
       --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+      /* State & signature hooks — themes may repoint these (e.g. to a brand
+         highlight color); the defaults reproduce the built-in design. */
+      --highlight: var(--ink);
+      --lede-rule: var(--ink);
+      --lede-rule-w: 1px;
+      --kicker-bg: transparent;
+      --kicker-ink: var(--ink-3);
+      --kicker-pad: 0;
+      --head-weight: 600;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -627,12 +678,12 @@ HTML_TEMPLATE = r"""<!doctype html>
     /* ── Headline (the answer) ── */
     .lede {
       padding: 12px 52px 26px;
-      border-bottom: 1px solid var(--ink);
+      border-bottom: var(--lede-rule-w) solid var(--lede-rule);
     }
     .lede h1 {
       font-family: var(--serif);
       font-size: clamp(26px, 4vw, 34px);
-      font-weight: 600;
+      font-weight: var(--head-weight);
       line-height: 1.22;
       letter-spacing: -0.3px;
     }
@@ -649,11 +700,14 @@ HTML_TEMPLATE = r"""<!doctype html>
       border-bottom: 1px solid var(--rule);
     }
     .exhibit-kicker {
+      display: inline-block;
       font-size: 11.5px;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--ink-3);
+      color: var(--kicker-ink);
+      background: var(--kicker-bg);
+      padding: var(--kicker-pad);
       margin-bottom: 6px;
     }
     .exhibit-title {
@@ -716,7 +770,7 @@ HTML_TEMPLATE = r"""<!doctype html>
     .mx-click { cursor: pointer; }
     th.mx-click:hover, td.mx-firm.mx-click:hover { color: var(--accent); }
     td.mx-cell.mx-click:hover { outline: 1.5px solid var(--ink-2); outline-offset: -1.5px; }
-    .mx-click.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+    .mx-click.sel { outline: 2px solid var(--highlight); outline-offset: -2px; }
     th.mx-click.sel, td.mx-firm.mx-click.sel { outline: none; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
     /* ── Exhibit: signal flow ── */
@@ -773,7 +827,7 @@ HTML_TEMPLATE = r"""<!doctype html>
     .pill.active {
       color: var(--ink);
       font-weight: 600;
-      border-bottom-color: var(--ink);
+      border-bottom-color: var(--highlight);
     }
     .search-input {
       margin-left: auto;
@@ -788,7 +842,7 @@ HTML_TEMPLATE = r"""<!doctype html>
       background: none;
       outline: none;
     }
-    .search-input:focus { border-bottom-color: var(--ink); }
+    .search-input:focus { border-bottom-color: var(--highlight); }
     .pill-sep {
       align-self: center;
       width: 1px;
@@ -911,6 +965,7 @@ HTML_TEMPLATE = r"""<!doctype html>
       .row { break-inside: avoid; }
     }
   </style>
+  __THEME_CSS__
 </head>
 <body>
 <div class="page">

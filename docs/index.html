@@ -13,7 +13,7 @@
   <meta name="twitter:image" content="https://morichtereur.github.io/gbs-intelligence-agent/og-card.png">
   <meta property="og:url" content="https://morichtereur.github.io/gbs-intelligence-agent/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <style>
     :root {
       --stock: #F4F4F1;
@@ -26,6 +26,15 @@
       --accent: #27568C;
       --serif: 'Source Serif 4', Georgia, serif;
       --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+      /* State & signature hooks — themes may repoint these (e.g. to a brand
+         highlight color); the defaults reproduce the built-in design. */
+      --highlight: var(--ink);
+      --lede-rule: var(--ink);
+      --lede-rule-w: 1px;
+      --kicker-bg: transparent;
+      --kicker-ink: var(--ink-3);
+      --kicker-pad: 0;
+      --head-weight: 600;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,12 +90,12 @@
     /* ── Headline (the answer) ── */
     .lede {
       padding: 12px 52px 26px;
-      border-bottom: 1px solid var(--ink);
+      border-bottom: var(--lede-rule-w) solid var(--lede-rule);
     }
     .lede h1 {
       font-family: var(--serif);
       font-size: clamp(26px, 4vw, 34px);
-      font-weight: 600;
+      font-weight: var(--head-weight);
       line-height: 1.22;
       letter-spacing: -0.3px;
     }
@@ -103,11 +112,14 @@
       border-bottom: 1px solid var(--rule);
     }
     .exhibit-kicker {
+      display: inline-block;
       font-size: 11.5px;
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--ink-3);
+      color: var(--kicker-ink);
+      background: var(--kicker-bg);
+      padding: var(--kicker-pad);
       margin-bottom: 6px;
     }
     .exhibit-title {
@@ -170,7 +182,7 @@
     .mx-click { cursor: pointer; }
     th.mx-click:hover, td.mx-firm.mx-click:hover { color: var(--accent); }
     td.mx-cell.mx-click:hover { outline: 1.5px solid var(--ink-2); outline-offset: -1.5px; }
-    .mx-click.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+    .mx-click.sel { outline: 2px solid var(--highlight); outline-offset: -2px; }
     th.mx-click.sel, td.mx-firm.mx-click.sel { outline: none; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
     /* ── Exhibit: signal flow ── */
@@ -227,7 +239,7 @@
     .pill.active {
       color: var(--ink);
       font-weight: 600;
-      border-bottom-color: var(--ink);
+      border-bottom-color: var(--highlight);
     }
     .search-input {
       margin-left: auto;
@@ -242,7 +254,7 @@
       background: none;
       outline: none;
     }
-    .search-input:focus { border-bottom-color: var(--ink); }
+    .search-input:focus { border-bottom-color: var(--highlight); }
     .pill-sep {
       align-self: center;
       width: 1px;
@@ -365,6 +377,7 @@
       .row { break-inside: avoid; }
     }
   </style>
+  
 </head>
 <body>
 <div class="page">
