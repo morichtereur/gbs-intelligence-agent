@@ -241,6 +241,66 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
     return columns, rows
 
 
+def weekly_series(signals: list[dict]) -> list[tuple[str, int]]:
+    """New signals per ISO calendar week across the reporting window."""
+    now = datetime.now(timezone.utc)
+    monday = (now - timedelta(days=now.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    starts = [monday - timedelta(weeks=i) for i in range(WINDOW_WEEKS - 1, -1, -1)]
+
+    counts = []
+    for start in starts:
+        end = start + timedelta(weeks=1)
+        n = 0
+        for s in signals:
+            try:
+                dt = datetime.fromisoformat(s["created_at"].replace("Z", "+00:00"))
+            except Exception:
+                continue
+            if start <= dt < end:
+                n += 1
+        counts.append((f"CW {start.strftime('%V')}", n))
+    return counts
+
+
+def momentum_title(counts: list[tuple[str, int]]) -> str:
+    """Action title for the signal-flow exhibit, derived purely from the counts."""
+    vals = [n for _, n in counts]
+    total = sum(vals)
+    if not total:
+        return "No signal flow in the window"
+    if len(vals) >= 4:
+        half = len(vals) // 2
+        first = sum(vals[:half]) / half
+        last = sum(vals[half:]) / (len(vals) - half)
+        if first and last >= first * 1.4:
+            return "Publishing has accelerated in the recent weeks of the window"
+        if last <= first * 0.6:
+            peak_label = max(counts, key=lambda c: c[1])[0]
+            return f"Publishing has slowed since its {peak_label} peak"
+    per_week = total / len(vals)
+    return (
+        f"Publishing runs at roughly {per_week:.0f} signal"
+        f"{'s' if round(per_week) != 1 else ''} per week"
+    )
+
+
+def matrix_action_title(columns: list[str], rows: list[dict]) -> str:
+    """Action title for the firm x theme exhibit, derived purely from the matrix."""
+    total = sum(r["total"] for r in rows)
+    if not total or not columns:
+        return "No competitor publishing in the window"
+    col_totals = [
+        (c, sum(r["counts"][i] for r in rows)) for i, c in enumerate(columns)
+    ]
+    top_col, top_n = max(col_totals, key=lambda x: x[1])
+    return (
+        f"{tag_label(top_col)} draws {top_n} of {total} theme mentions "
+        f"across {len(rows)} firms"
+    )
+
+
 def compute_headline(signals: list[dict]) -> tuple[str, str]:
     """Answer-first action title + supporting deck line, derived purely from the data."""
     if not signals:
@@ -279,7 +339,11 @@ def render_matrix(columns: list[str], rows: list[dict]) -> str:
 
     max_cell = max((max(r["counts"]) for r in rows if r["counts"]), default=1) or 1
 
-    head = "".join(f'<th class="mx-col">{escape(tag_label(c))}</th>' for c in columns)
+    head = "".join(
+        f'<th class="mx-col mx-click" data-tag="{escape(c)}" tabindex="0" role="button" '
+        f'title="Filter the register: {escape(tag_label(c))}">{escape(tag_label(c))}</th>'
+        for c in columns
+    )
     body_rows = []
     prev_cluster = None
     for r in rows:
@@ -289,23 +353,73 @@ def render_matrix(columns: list[str], rows: list[dict]) -> str:
             cluster_cell = f'<td class="mx-cluster" rowspan="{span}">{escape(r["cluster"])}</td>'
             prev_cluster = r["cluster"]
         cells = []
-        for c in r["counts"]:
+        for i, c in enumerate(r["counts"]):
             if c == 0:
                 cells.append('<td class="mx-cell mx-zero">·</td>')
             else:
                 step = min(len(HEAT_RAMP) - 1, max(1, round(c / max_cell * (len(HEAT_RAMP) - 1))))
                 color = HEAT_RAMP[step]
                 ink = "#FFFFFF" if step >= 3 else "#1A1E26"
-                cells.append(f'<td class="mx-cell" style="background:{color}; color:{ink};">{c}</td>')
+                tag = columns[i]
+                tip = (
+                    f"{r['firm']} × {tag_label(tag)} — {c} signal{'s' if c != 1 else ''}. "
+                    "Click to filter the register."
+                )
+                cells.append(
+                    f'<td class="mx-cell mx-click" data-firm="{escape(r["firm"])}" '
+                    f'data-tag="{escape(tag)}" tabindex="0" role="button" '
+                    f'title="{escape(tip)}" style="background:{color}; color:{ink};">{c}</td>'
+                )
         icon = favicon_img(r.get("icon_url", ""), 14)
+        firm_tip = f"Filter the register: {r['firm']}"
         body_rows.append(
-            f'<tr>{cluster_cell}<td class="mx-firm">{icon}{escape(r["firm"])}</td>'
+            f'<tr>{cluster_cell}<td class="mx-firm mx-click" data-firm="{escape(r["firm"])}" '
+            f'tabindex="0" role="button" title="{escape(firm_tip)}">{icon}{escape(r["firm"])}</td>'
             f'{"".join(cells)}<td class="mx-total">{r["total"]}</td></tr>'
         )
     return (
         '<table class="matrix"><thead><tr><th></th><th></th>'
         + head + '<th class="mx-col">Total</th></tr></thead><tbody>'
         + "".join(body_rows) + "</tbody></table>"
+    )
+
+
+def render_weekly(counts: list[tuple[str, int]]) -> str:
+    """Compact bar strip: new signals per calendar week."""
+    if not counts or not any(n for _, n in counts):
+        return ""
+    peak = max(n for _, n in counts)
+    bars = []
+    for i, (label, n) in enumerate(counts):
+        h = max(3, round(n / peak * 56)) if n else 3
+        cls = "bar" if n else "bar zero"
+        tip = f"{label} — {n} new signal{'s' if n != 1 else ''}"
+        # Direct-label peak weeks and the current week only.
+        show_n = n and (n == peak or i == len(counts) - 1)
+        val = f'<div class="wk-n">{n}</div>' if show_n else ""
+        bars.append(
+            f'<div class="wk" title="{escape(tip)}">{val}'
+            f'<div class="{cls}" style="height:{h}px"></div>'
+            f'<div class="wk-l">{escape(label.replace("CW ", ""))}</div></div>'
+        )
+    return (
+        '<div class="spark" role="img" aria-label="New signals per calendar week">'
+        + "".join(bars)
+        + '</div><div class="spark-axis">Calendar week</div>'
+    )
+
+
+def render_exhibit2(counts: list[tuple[str, int]]) -> str:
+    strip = render_weekly(counts)
+    if not strip:
+        return ""
+    return (
+        '<div class="exhibit">'
+        '<div class="exhibit-kicker">Exhibit 2 · Signal flow</div>'
+        f'<div class="exhibit-title">{escape(momentum_title(counts))}</div>'
+        f'{strip}'
+        '<div class="exhibit-note">New signals per calendar week; hover a bar for the count.</div>'
+        "</div>"
     )
 
 
@@ -333,6 +447,7 @@ def build_html(signals: list[dict]) -> str:
 
     headline, deck = compute_headline(signals)
     columns, mx_rows = firm_theme_matrix(signals)
+    week_counts = weekly_series(signals)
 
     all_tags = sorted({t for s in signals for t in s["tags"]})
     now = datetime.now(timezone.utc).strftime("%d %B %Y")
@@ -353,10 +468,14 @@ def build_html(signals: list[dict]) -> str:
         "__WINDOW_DAYS__": str(WINDOW_WEEKS * 7),
         "__HEADLINE__": escape(headline),
         "__DECK__": escape(deck),
+        "__MATRIX_TITLE__": escape(matrix_action_title(columns, mx_rows)),
         "__MATRIX__": render_matrix(columns, mx_rows),
+        "__N_SIGNALS__": str(len(signals)),
+        "__EXHIBIT2__": render_exhibit2(week_counts),
         "__TAG_PILLS__": tag_pills,
         "__FOOTER_IDENTITY__": render_footer(),
         "__SIGNALS_JSON__": signals_json,
+        "__TAG_LABELS_JSON__": json.dumps(TAG_LABELS, ensure_ascii=False),
     }
     for token, value in replacements.items():
         html = html.replace(token, value)
@@ -369,6 +488,10 @@ HTML_TEMPLATE = r"""<!doctype html>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Intelligence Explorer</title>
+  <meta name="description" content="__BRAND__ — weekly competitor and analyst signals, scored for relevance and summarised automatically. Firm-by-theme exhibit, signal flow, and a filterable register.">
+  <meta property="og:title" content="__BRAND__ — Intelligence Explorer">
+  <meta property="og:description" content="Weekly competitor and analyst signals, scored for relevance and summarised automatically.">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -454,10 +577,18 @@ HTML_TEMPLATE = r"""<!doctype html>
       max-width: 42em;
     }
 
-    /* ── Exhibit: matrix ── */
+    /* ── Exhibits ── */
     .exhibit {
-      padding: 26px 52px 28px;
+      padding: 24px 52px 28px;
       border-bottom: 1px solid var(--rule);
+    }
+    .exhibit-kicker {
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin-bottom: 6px;
     }
     .exhibit-title {
       font-family: var(--serif);
@@ -515,6 +646,40 @@ HTML_TEMPLATE = r"""<!doctype html>
       margin-top: 12px;
     }
 
+    /* Matrix cross-filtering */
+    .mx-click { cursor: pointer; }
+    th.mx-click:hover, td.mx-firm.mx-click:hover { color: var(--accent); }
+    td.mx-cell.mx-click:hover { outline: 1.5px solid var(--ink-2); outline-offset: -1.5px; }
+    .mx-click.sel { outline: 2px solid var(--ink); outline-offset: -2px; }
+    th.mx-click.sel, td.mx-firm.mx-click.sel { outline: none; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* ── Exhibit: signal flow ── */
+    .spark {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 92px;
+      margin-top: 4px;
+    }
+    .wk {
+      flex: 0 0 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+    }
+    .wk .bar {
+      width: 20px;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+    }
+    .wk .bar.zero { background: var(--rule-soft); border-radius: 1px; }
+    .wk:hover .bar { opacity: 0.8; }
+    .wk-n { font-size: 11.5px; color: var(--ink-2); margin-bottom: 4px; font-weight: 500; }
+    .wk-l { font-size: 10.5px; color: var(--ink-3); margin-top: 6px; }
+    .spark-axis { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+
     /* ── Filters ── */
     .filters {
       padding: 14px 52px 0;
@@ -558,6 +723,27 @@ HTML_TEMPLATE = r"""<!doctype html>
       outline: none;
     }
     .search-input:focus { border-bottom-color: var(--ink); }
+    .pill-sep {
+      align-self: center;
+      width: 1px;
+      height: 16px;
+      background: var(--rule);
+    }
+    .chip {
+      font-family: var(--sans);
+      font-size: 12.5px;
+      align-self: center;
+      color: var(--ink);
+      background: none;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      padding: 2px 8px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--ink-2); }
+    .chip .x { color: var(--ink-3); margin-left: 6px; }
 
     /* ── Register ── */
     .register { padding: 4px 52px 44px; }
@@ -674,16 +860,23 @@ HTML_TEMPLATE = r"""<!doctype html>
   </div>
 
   <div class="exhibit">
-    <div class="exhibit-title">Where competitors publish</div>
+    <div class="exhibit-kicker">Exhibit 1 · Where competitors publish</div>
+    <div class="exhibit-title">__MATRIX_TITLE__</div>
     <div class="matrix-scroll">
       __MATRIX__
     </div>
-    <div class="exhibit-note">A signal may carry several themes. Darker cells = more signals.</div>
+    <div class="exhibit-note">n = __N_SIGNALS__ signals; a signal may carry several themes. Darker cells = more signals. Click a firm, theme, or cell to filter the register below.</div>
   </div>
+
+  __EXHIBIT2__
 
   <div class="filters">
     <button class="pill active" data-filter="tag" data-value="all">All themes</button>
     __TAG_PILLS__
+    <span class="pill-sep" aria-hidden="true"></span>
+    <button class="pill" data-filter="type" data-value="move">Market moves</button>
+    <button class="pill" data-filter="type" data-value="research">Research</button>
+    <button class="chip" id="firmChip" hidden></button>
     <input class="search-input" id="search" type="text" placeholder="Search&hellip;">
   </div>
 
@@ -701,8 +894,9 @@ HTML_TEMPLATE = r"""<!doctype html>
 
 <script>
 const SIGNALS = __SIGNALS_JSON__;
+const TAG_LABELS = __TAG_LABELS_JSON__;
 
-let filters = { tag: 'all', search: '' };
+let filters = { tag: 'all', type: 'all', firm: 'all', search: '' };
 
 function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -710,6 +904,8 @@ function escHtml(s) {
 
 function matches(s) {
   if (filters.tag !== 'all' && !s.tags.includes(filters.tag)) return false;
+  if (filters.firm !== 'all' && s.company !== filters.firm) return false;
+  if (filters.type !== 'all' && signalType(s) !== filters.type) return false;
   if (filters.search) {
     const q = filters.search.toLowerCase();
     if (!(s.title + ' ' + s.summary + ' ' + s.company + ' ' + s.topic).toLowerCase().includes(q)) return false;
@@ -762,19 +958,71 @@ function render() {
   const moves = visible.filter(s => signalType(s) === 'move');
   const research = visible.filter(s => signalType(s) === 'research');
 
-  const label = visible.length + ' signal' + (visible.length !== 1 ? 's' : '') + ' · ranked by relevance · ★ = high';
+  const parts = [visible.length + ' signal' + (visible.length !== 1 ? 's' : '')];
+  if (filters.firm !== 'all') parts.push(escHtml(filters.firm));
+  if (filters.tag !== 'all') parts.push(escHtml(TAG_LABELS[filters.tag] || filters.tag));
+  if (filters.type !== 'all') parts.push(filters.type === 'move' ? 'market moves' : 'research');
+  parts.push('ranked by relevance · ★ = high');
+  const label = parts.join(' · ');
   el.innerHTML =
     '<div class="list-head">' + label + '</div>' +
     groupHtml('Market moves', 'Offerings, alliances, M&amp;A, positioning — moves that may demand a competitive response.', moves) +
     groupHtml('Research &amp; viewpoints', 'Surveys, reports, and thought leadership — to read, cite, and benchmark against.', research);
 }
 
-document.querySelectorAll('.pill[data-filter]').forEach(pill => {
-  pill.addEventListener('click', () => {
-    document.querySelectorAll('.pill[data-filter="tag"]').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    filters.tag = pill.dataset.value;
-    render();
+function syncControls() {
+  // Theme pills mirror filters.tag; type pills toggle; the firm chip shows filters.firm.
+  document.querySelectorAll('.pill[data-filter="tag"]').forEach(p =>
+    p.classList.toggle('active', p.dataset.value === filters.tag));
+  document.querySelectorAll('.pill[data-filter="type"]').forEach(p =>
+    p.classList.toggle('active', p.dataset.value === filters.type));
+  const chip = document.getElementById('firmChip');
+  if (filters.firm !== 'all') {
+    chip.innerHTML = escHtml(filters.firm) + '<span class="x">&times;</span>';
+    chip.hidden = false;
+  } else {
+    chip.hidden = true;
+  }
+  // Matrix selection state.
+  document.querySelectorAll('.mx-click').forEach(el => {
+    const f = el.dataset.firm, t = el.dataset.tag;
+    let sel;
+    if (f && t) sel = filters.firm === f && filters.tag === t;
+    else if (f) sel = filters.firm === f && filters.tag === 'all';
+    else sel = filters.tag === t && filters.firm === 'all';
+    el.classList.toggle('sel', sel);
+  });
+}
+
+function apply(patch) {
+  Object.assign(filters, patch);
+  syncControls();
+  render();
+}
+
+document.querySelectorAll('.pill[data-filter="tag"]').forEach(pill => {
+  pill.addEventListener('click', () => apply({ tag: pill.dataset.value }));
+});
+
+document.querySelectorAll('.pill[data-filter="type"]').forEach(pill => {
+  pill.addEventListener('click', () =>
+    apply({ type: filters.type === pill.dataset.value ? 'all' : pill.dataset.value }));
+});
+
+document.getElementById('firmChip').addEventListener('click', () => apply({ firm: 'all' }));
+
+document.querySelectorAll('.mx-click').forEach(el => {
+  const activate = () => {
+    const f = el.dataset.firm, t = el.dataset.tag;
+    if (el.classList.contains('sel')) {
+      apply({ firm: 'all', tag: 'all' });
+    } else {
+      apply({ firm: f || 'all', tag: t || 'all' });
+    }
+  };
+  el.addEventListener('click', activate);
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
   });
 });
 
@@ -785,11 +1033,8 @@ document.getElementById('search').addEventListener('input', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    filters = { tag: 'all', search: '' };
     document.getElementById('search').value = '';
-    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.pill[data-value="all"]').forEach(p => p.classList.add('active'));
-    render();
+    apply({ tag: 'all', type: 'all', firm: 'all', search: '' });
   }
   if (e.key === '/' && document.activeElement !== document.getElementById('search')) {
     e.preventDefault();
@@ -797,6 +1042,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+syncControls();
 render();
 </script>
 </body>
