@@ -32,17 +32,30 @@ PERIOD_LABEL = os.getenv("INTEL_PERIOD_LABEL", "").strip()
 OG_IMAGE = os.getenv("INTEL_OG_IMAGE", "").strip()
 OG_URL = os.getenv("INTEL_OG_URL", "").strip()
 
-# Themes follow the CFO-agenda pillars: strategy, delivery (GBS/GCC),
-# steering (Controlling & FP&A), with agentic AI as the cross-cutting layer.
+# Themes follow the CFO-agenda pillars: strategy, operating model, delivery
+# (GBS/GCC), process, steering (Controlling & FP&A), with agentic AI as the
+# cross-cutting layer. Order here is the matrix column order.
 TAG_LABELS = {
     "Finance_Strategy": "Finance strategy",
+    "Operating_Model": "Operating model",
     "GBS": "GBS",
     "GCC": "GCC",
+    "Process_Excellence": "Process excellence",
     "Controlling_FPA": "Controlling & FP&A",
     "Agentic_AI": "Agentic AI",
-    "Operating_Model": "Operating model",
     "Analyst_Research": "Analyst research",
 }
+
+# Instances may relabel or extend themes without touching the code via a
+# "tag_labels" object in sources.json, e.g. {"Controlling_FPA": "Performance
+# management"}. Relabelled keys keep their column position; new keys append.
+try:
+    with open(SOURCES_PATH, encoding="utf-8") as _f:
+        for _k, _v in json.load(_f).get("tag_labels", {}).items():
+            if not _k.startswith("_") and isinstance(_v, str):
+                TAG_LABELS[_k] = _v
+except Exception:
+    pass
 CLUSTER_ORDER = ["MBB", "Big4", "Accenture", "Analysts", "Other"]
 
 # Firm logos are rendered as favicons from the firm's own domain.
