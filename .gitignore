@@ -40,3 +40,7 @@ edition.txt
 
 # local archives
 *.tar
+
+# Live page state (committed by the Update page workflow)
+!data/live/intel.db
+!data/live/edition.txt

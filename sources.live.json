@@ -1,0 +1,424 @@
+{
+  "_comment": "Live public configuration: consultancy and analyst sources only, fetched as anonymous Google News RSS queries. No accounts, no client watch list. Used by the Update page workflow.",
+  "feeds": [
+    {
+      "source": "Accenture_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Aaccenture.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+OR+copilot+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Accenture_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Aaccenture.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29+-jobs+-careers+-hiring+-apply+-event+-webinar&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Accenture_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Aaccenture.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "BCG_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Abcg.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "BCG_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Abcg.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "BCG_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Abcg.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Deloitte_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Adeloitte.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Deloitte_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Adeloitte.com+%28%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery%22%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Deloitte_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Adeloitte.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "EY_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Aey.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "EY_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Aey.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "EY_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Aey.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "KPMG_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Akpmg.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "KPMG_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Akpmg.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "KPMG_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Akpmg.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "McKinsey_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Amckinsey.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "McKinsey_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Amckinsey.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "McKinsey_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Amckinsey.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "PwC_AI",
+      "url": "https://news.google.com/rss/search?q=site%3Apwc.com+%28+%22artificial+intelligence%22+OR+%22generative+ai%22+OR+%22gen+ai%22+OR+%22agentic+ai%22+OR+%22ai+agent%22+OR+%22ai+agents%22+%29&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "PwC_OM",
+      "url": "https://news.google.com/rss/search?q=site%3Apwc.com+%28+%22operating+model%22+OR+%22delivery+model%22+OR+%22global+delivery+model%22+OR+%22target+operating+model%22+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "PwC_GBS_GCC",
+      "url": "https://news.google.com/rss/search?q=site%3Apwc.com+%28+gbs+OR+%22global+business+services%22+OR+%22shared+services%22+OR+%22global+capability+center%22+OR+%22global+capability+centre%22+OR+gcc+%29+-jobs+-careers+-hiring+-apply&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "SSON_Analytics_SSC",
+      "url": "https://news.google.com/rss/search?q=site:sson.com+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "SSON_Analytics_GBS",
+      "url": "https://news.google.com/rss/search?q=site:ssonetwork.com+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Everest_GBS",
+      "url": "https://news.google.com/rss/search?q=site:everestgrp.com+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "HfS_Research_GBS",
+      "url": "https://news.google.com/rss/search?q=site:hfsresearch.com+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Gartner_GBS_SSC",
+      "url": "https://news.google.com/rss/search?q=site:gartner.com+%22shared+services%22+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Gartner_GBS",
+      "url": "https://news.google.com/rss/search?q=site:gartner.com+%22global+business+services%22+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "ISG_Outsourcing_SSC",
+      "url": "https://news.google.com/rss/search?q=site:isg-one.com+%22shared+services%22+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "ISG_GBS",
+      "url": "https://news.google.com/rss/search?q=site:isg-one.com+GBS+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "ABSL_GBS_SSC",
+      "url": "https://news.google.com/rss/search?q=site:absl.pl+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "ABSL_Poland",
+      "url": "https://news.google.com/rss/search?q=ABSL+Poland+%22business+services%22+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "Hackett_GBS_SSC",
+      "url": "https://news.google.com/rss/search?q=site:thehackettgroup.com+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    },
+    {
+      "source": "OPEX_Finance_SSC",
+      "url": "https://news.google.com/rss/search?q=site:opexsociety.org+after:2026-01-01&hl=en&gl=US&ceid=US:en"
+    }
+  ],
+  "competitor_sources": [
+    "Accenture",
+    "BCG",
+    "Deloitte",
+    "EY",
+    "KPMG",
+    "McKinsey",
+    "PwC"
+  ],
+  "analyst_sources": [
+    "SSON_Analytics",
+    "Everest",
+    "HfS_Research",
+    "Gartner",
+    "ISG",
+    "ABSL",
+    "Hackett",
+    "OPEX"
+  ],
+  "client_sources": [],
+  "client_required_phrases": {},
+  "client_company_aliases": {},
+  "firm_clusters": {
+    "MBB": [
+      "McKinsey",
+      "BCG",
+      "Bain"
+    ],
+    "Big4": [
+      "Deloitte",
+      "EY",
+      "KPMG",
+      "PwC"
+    ],
+    "Accenture": [
+      "Accenture"
+    ],
+    "Analysts": [
+      "SSON",
+      "Everest",
+      "HfS",
+      "Gartner",
+      "ISG",
+      "ABSL",
+      "Hackett",
+      "OPEX",
+      "Zinnov"
+    ]
+  },
+  "firm_domains": {
+    "McKinsey": "mckinsey.com",
+    "BCG": "bcg.com",
+    "Bain": "bain.com",
+    "Deloitte": "deloitte.com",
+    "EY": "ey.com",
+    "KPMG": "kpmg.com",
+    "PwC": "pwc.com",
+    "Accenture": "accenture.com",
+    "HFS": "hfsresearch.com",
+    "HfS": "hfsresearch.com",
+    "Everest": "everestgrp.com",
+    "SSON": "ssonetwork.com",
+    "Gartner": "gartner.com",
+    "Hackett": "thehackettgroup.com",
+    "ISG": "isg-one.com",
+    "Zinnov": "zinnov.com",
+    "ABSL": "absl.pl",
+    "OPEX": "opexsociety.org"
+  },
+  "blocked_domains": [
+    "247wallst.com",
+    "4-traders.com",
+    "accesswire.com",
+    "ad-hoc-news.de",
+    "barchart.com",
+    "barrons.com",
+    "benzinga.com",
+    "biggo.com",
+    "businesswire.com",
+    "consultancy.eu",
+    "consultancy.uk",
+    "deloitte.com/middle-east",
+    "deloitte.com/ug",
+    "etf.com",
+    "etfdb.com",
+    "finance.sina.com.cn",
+    "finance.yahoo.com",
+    "financialcontent.com",
+    "finviz.com",
+    "fool.com",
+    "fxleaders.com",
+    "globalhrnews.com",
+    "globenewswire.com",
+    "gurufocus.com",
+    "harianbasis.co",
+    "indiaretailing.com",
+    "insidermonkey.com",
+    "investing.com",
+    "jooble.org",
+    "macrotrends.net",
+    "marketbeat.com",
+    "marketscreener.com",
+    "marketwatch.com",
+    "massdevice.com",
+    "medicalbuyer.co.in",
+    "moomoo.com",
+    "motleyfool.com",
+    "multibagg.ai",
+    "nasdaq.com",
+    "newswire.ca",
+    "otouczelnie.pl",
+    "praca.pl",
+    "prnewswire.com",
+    "proactiveinvestors.com",
+    "rttnews.com",
+    "scanx.io",
+    "scanx.trade",
+    "seekingalpha.com",
+    "sharedserviceslink.com",
+    "simplywall.st",
+    "smartrecruiters.com",
+    "stockanalysis.com",
+    "stockhouse.com",
+    "stocktitan.net",
+    "streetinsider.com",
+    "talent.com",
+    "theaustralian.com.au",
+    "thestreet.com",
+    "tipranks.com",
+    "trefis.com",
+    "usijobs.deloitte.com",
+    "wallstreetzen.com",
+    "whalesbook.com",
+    "wisesheets.io",
+    "xyz.pl",
+    "zacks.com"
+  ],
+  "tag_rules": {
+    "_comment": "Themes mirror the CFO-agenda pillars; keywords match on word boundaries. Keep themes distinct - overlapping keywords double-tag articles.",
+    "Finance_Strategy": [
+      "finance transformation",
+      "cfo transformation",
+      "finance strategy",
+      "cfo agenda",
+      "finance function",
+      "digital finance",
+      "digital cfo",
+      "finance vision",
+      "future of finance",
+      "finance of the future",
+      "cfo of the future",
+      "next-generation finance",
+      "finance modernization",
+      "finance modernisation"
+    ],
+    "Operating_Model": [
+      "operating model",
+      "target operating model",
+      "finance operating model",
+      "organizational design",
+      "organisational design",
+      "delivery model",
+      "service delivery model",
+      "global delivery model",
+      "governance model"
+    ],
+    "GBS": [
+      "gbs",
+      "global business services",
+      "shared services",
+      "shared service center",
+      "shared service centre",
+      "shared services center",
+      "shared services centre",
+      "ssc",
+      "business services organization",
+      "business services organisation",
+      "integrated business services",
+      "business process services",
+      "business process outsourcing",
+      "bpo",
+      "managed services",
+      "finance operations",
+      "outsourcing",
+      "location strategy",
+      "transition management",
+      "service level agreement"
+    ],
+    "GCC": [
+      "global capability center",
+      "global capability centre",
+      "gcc",
+      "capability center",
+      "capability centre",
+      "capability hub",
+      "global in-house center",
+      "global in-house centre",
+      "gic",
+      "captive center",
+      "captive centre",
+      "captive unit",
+      "delivery center",
+      "delivery centre",
+      "nearshore",
+      "nearshoring",
+      "offshoring",
+      "offshore center",
+      "offshore centre",
+      "center of excellence",
+      "centre of excellence"
+    ],
+    "Process_Excellence": [
+      "global process owner",
+      "process standardization",
+      "process standardisation",
+      "process excellence",
+      "process mining",
+      "end-to-end process",
+      "record to report",
+      "r2r",
+      "procure to pay",
+      "p2p",
+      "order to cash",
+      "o2c",
+      "acquire to retire",
+      "a2r",
+      "process architecture",
+      "process taxonomy",
+      "process redesign",
+      "global process model",
+      "process harmonization",
+      "process harmonisation"
+    ],
+    "Controlling_FPA": [
+      "fp&a",
+      "financial planning and analysis",
+      "xp&a",
+      "financial controlling",
+      "controlling function",
+      "group controlling",
+      "controlling transformation",
+      "management accounting",
+      "management reporting",
+      "management information",
+      "planning and forecasting",
+      "financial forecasting",
+      "rolling forecast",
+      "driver-based planning",
+      "integrated business planning",
+      "zero-based budgeting",
+      "budgeting",
+      "scenario planning",
+      "variance analysis",
+      "profitability analysis",
+      "steering model",
+      "performance management",
+      "business partnering",
+      "financial controller",
+      "decision support"
+    ],
+    "Agentic_AI": [
+      "agentic ai",
+      "agentic",
+      "ai agent",
+      "ai agents",
+      "autonomous agent",
+      "autonomous agents",
+      "multi-agent",
+      "agentic workflow",
+      "agent orchestration",
+      "autonomous workflow",
+      "ai orchestration",
+      "ai transformation",
+      "autonomous finance",
+      "generative ai",
+      "genai",
+      "large language model",
+      "llm",
+      "intelligent automation",
+      "hyperautomation",
+      "digital workforce",
+      "digital worker",
+      "digital workers",
+      "digital labor",
+      "digital labour"
+    ]
+  }
+}

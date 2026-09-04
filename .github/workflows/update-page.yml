@@ -1,0 +1,69 @@
+name: Update page
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-page:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build live page (ingest, score, render)
+        if: env.ANTHROPIC_API_KEY != ''
+        run: |
+          export INTEL_DB_PATH=data/live/intel.db
+          export INTEL_SOURCES_PATH=sources.live.json
+          export INTEL_EDITION_FILE=data/live/edition.txt
+          export INTEL_OUT_DIR=output/LIVE
+          export INTEL_WINDOW_DAYS=28
+          export INTEL_MAX_SUMMARIZE=150
+          export INTEL_DASHBOARD_WEEKS=4
+          export INTEL_MIN_SCORE=3
+          export INTEL_ORG_NAME="GBS Intelligence Agent"
+          export INTEL_OWNER_NAME="Moritz Richter"
+          export INTEL_OWNER_URL="https://morichtereur.github.io/"
+          export INTEL_OG_IMAGE="https://morichtereur.github.io/gbs-intelligence-agent/og-card.png"
+          export INTEL_OG_URL="https://morichtereur.github.io/gbs-intelligence-agent/"
+          mkdir -p data/live output/LIVE
+          INTEL_EDITION=$(python edition_counter.py --peek)
+          export INTEL_EDITION
+          python intel_ingest_stdlib.py
+          python summarize_new_links.py
+          python generate_dashboard.py
+          python edition_counter.py --commit "$INTEL_EDITION"
+          # Never publish an empty page: fail here rather than overwrite a good one.
+          grep -q "Where competitors publish" output/LIVE/intelligence_explorer.html
+          ! grep -q "no articles cleared the relevance filters" output/LIVE/intelligence_explorer.html
+          cp output/LIVE/intelligence_explorer.html docs/index.html
+
+      - name: Build demo page (no ANTHROPIC_API_KEY secret configured)
+        if: env.ANTHROPIC_API_KEY == ''
+        run: |
+          python demo.py
+          grep -q "Where competitors publish" output/DEMO/intelligence_explorer.html
+          cp output/DEMO/intelligence_explorer.html docs/index.html
+
+      - name: Commit and push if changed
+        run: |
+          git add -f docs/index.html data/live 2>/dev/null || git add docs/index.html
+          if git diff --cached --quiet; then
+            echo "No changes — page already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update published page"
+          git push

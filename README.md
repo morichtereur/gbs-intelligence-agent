@@ -31,6 +31,12 @@ The demo's competitor signals are real publications by the firms (verified links
 
 ---
 
+## The published page
+
+[The hosted page](https://morichtereur.github.io/gbs-intelligence-agent/) is refreshed by the **Update page** workflow (Actions tab → Update page → Run workflow). With an `ANTHROPIC_API_KEY` repository secret configured, the run executes the real pipeline against `sources.live.json` — anonymous Google News RSS queries for the consultancy and analyst sources, no accounts and no client watch list — and commits the scored dashboard plus its database state under `data/live/`. Without the secret, it falls back to rebuilding the sample-data demo.
+
+---
+
 ## How it works
 
 The agent monitors public sources for strategic signals relevant to **Global Business Services (GBS)**, **Global Capability Centers (GCC)**, and **Agentic AI** — and turns them into a curated weekly intelligence product.
