@@ -7,6 +7,7 @@ import re
 import sqlite3
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from html import escape
 from pathlib import Path
 from urllib.parse import urlparse
@@ -156,6 +157,25 @@ def tag_label(tag: str) -> str:
     return TAG_LABELS.get(tag, tag.replace("_", " "))
 
 
+def parse_signal_date(published_at: str, created_at: str) -> datetime | None:
+    """Publication date when the feed provided one (ISO or RFC 822),
+    otherwise the ingest timestamp."""
+    for raw in (published_at, created_at):
+        s = (raw or "").strip()
+        if not s:
+            continue
+        try:
+            return datetime.fromisoformat(s.replace("Z", "+00:00"))
+        except ValueError:
+            pass
+        try:
+            dt = parsedate_to_datetime(s)
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            pass
+    return None
+
+
 def fetch_all_signals() -> list[dict]:
     start = (datetime.now(timezone.utc) - timedelta(weeks=WINDOW_WEEKS)).isoformat()
     con = sqlite3.connect(DB_PATH)
@@ -175,6 +195,7 @@ def fetch_all_signals() -> list[dict]:
             COALESCE(a.tags, '') as tags,
             COALESCE(a.feed_type, 'competitor') as feed_type,
             a.created_at,
+            COALESCE(a.published_at, '') as published_at,
             COALESCE(s.bullets, '') as summary,
             COALESCE(s.relevance_score, 2) as relevance_score,
             COALESCE(s.signal_type, '') as signal_type
@@ -209,7 +230,7 @@ def fetch_all_signals() -> list[dict]:
 
     signals = []
     seen_urls: set[str] = set()
-    for src, title, url, tags, feed_type, created_at, summary, score, signal_type in rows:
+    for src, title, url, tags, feed_type, created_at, published_at, summary, score, signal_type in rows:
         # The same article often arrives through several alert feeds —
         # keep only the first (highest-scored) occurrence per URL.
         clean = (url or "").strip()
@@ -222,11 +243,8 @@ def fetch_all_signals() -> list[dict]:
         company = parts[0].strip()
         topic = parts[1].replace("_", "/") if len(parts) > 1 else ""
 
-        try:
-            dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-            cw = f"CW {dt.strftime('%V')}"
-        except Exception:
-            cw = ""
+        pub_dt = parse_signal_date(published_at, created_at)
+        cw = f"CW {pub_dt.strftime('%V')}" if pub_dt else ""
 
         tag_list = [t.strip() for t in tags.split(",") if t.strip() and t.strip() != "Client_Signal"]
         cluster = company_to_cluster.get(company.lower(), "Other")
@@ -249,6 +267,7 @@ def fetch_all_signals() -> list[dict]:
             "tags": tag_list,
             "feed_type": feed_type,
             "created_at": created_at,
+            "published_at": pub_dt.isoformat() if pub_dt else "",
             "cw": cw,
             "summary": summary,
             "score": int(score),
@@ -284,6 +303,7 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
     columns = [t for t in TAG_LABELS if t in col_counter and t not in MATRIX_EXCLUDE]
 
     cells: dict[str, Counter] = {}
+    firm_signals: Counter[str] = Counter()
     clusters: dict[str, str] = {}
     icons: dict[str, str] = {}
     for s in comp:
@@ -291,14 +311,17 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
         clusters[firm] = s["cluster"]
         icons[firm] = s.get("icon_url", "")
         c = cells.setdefault(firm, Counter())
-        for t in s["tags"]:
-            if t in columns:
-                c[t] += 1
+        hits = [t for t in s["tags"] if t in columns]
+        for t in hits:
+            c[t] += 1
+        if hits:
+            # Total counts each signal once, even when it carries several
+            # themes — so it ties to the headline's signal counts.
+            firm_signals[firm] += 1
 
     rows = []
     for firm, counter in cells.items():
-        total = sum(counter.get(t, 0) for t in columns)
-        if total == 0:
+        if firm_signals[firm] == 0:
             # A firm whose signals carry only excluded tags has no row;
             # its articles remain in the register below.
             continue
@@ -307,7 +330,7 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
             "icon_url": icons.get(firm, ""),
             "cluster": clusters.get(firm, "Other"),
             "counts": [counter.get(t, 0) for t in columns],
-            "total": total,
+            "total": firm_signals[firm],
         })
     rows.sort(key=lambda r: (
         CLUSTER_ORDER.index(r["cluster"]) if r["cluster"] in CLUSTER_ORDER else len(CLUSTER_ORDER),
@@ -318,34 +341,50 @@ def firm_theme_matrix(signals: list[dict]) -> tuple[list[str], list[dict]]:
 
 
 def weekly_series(signals: list[dict]) -> list[tuple[str, int]]:
-    """New signals per ISO calendar week across the reporting window."""
+    """Signals per ISO calendar week of publication across the reporting window.
+
+    The window itself is ingest-based, so items published before the chart's
+    first week (feeds resurface pieces up to INTEL_MAX_AGE_DAYS old) are
+    collected in a leading bucket — every bar total ties back to n.
+    """
     now = datetime.now(timezone.utc)
     monday = (now - timedelta(days=now.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
     starts = [monday - timedelta(weeks=i) for i in range(WINDOW_WEEKS - 1, -1, -1)]
 
-    counts = []
-    for start in starts:
-        end = start + timedelta(weeks=1)
-        n = 0
-        for s in signals:
-            try:
-                dt = datetime.fromisoformat(s["created_at"].replace("Z", "+00:00"))
-            except Exception:
-                continue
-            if start <= dt < end:
-                n += 1
-        counts.append((f"CW {start.strftime('%V')}", n))
+    per_week = [0] * len(starts)
+    earlier = 0
+    for s in signals:
+        try:
+            dt = datetime.fromisoformat(s["published_at"])
+        except (KeyError, ValueError):
+            continue
+        if dt < starts[0]:
+            earlier += 1
+            continue
+        idx = min((dt - starts[0]).days // 7, len(starts) - 1)
+        per_week[idx] += 1
+
+    counts = [
+        (f"CW {start.strftime('%V')}", n) for start, n in zip(starts, per_week)
+    ]
+    if earlier:
+        before = starts[0] - timedelta(weeks=1)
+        counts.insert(0, (f"≤ CW {before.strftime('%V')}", earlier))
     return counts
 
 
 def momentum_title(counts: list[tuple[str, int]]) -> str:
     """Action title for the signal-flow exhibit, derived purely from the counts."""
-    vals = [n for _, n in counts]
+    if not sum(n for _, n in counts):
+        return "No signal flow in the window"
+    # The trend and the per-week rate read only the calendar weeks,
+    # not the "published earlier" catch-all bucket.
+    vals = [n for label, n in counts if not label.startswith("≤")]
     total = sum(vals)
     if not total:
-        return "No signal flow in the window"
+        return "Signals in the window predate its calendar weeks"
     if len(vals) >= 4:
         half = len(vals) // 2
         first = sum(vals[:half]) / half
@@ -353,7 +392,8 @@ def momentum_title(counts: list[tuple[str, int]]) -> str:
         if first and last >= first * 1.4:
             return "Publishing has accelerated in the recent weeks of the window"
         if last <= first * 0.6:
-            peak_label = max(counts, key=lambda c: c[1])[0]
+            weeks = [c for c in counts if not c[0].startswith("≤")]
+            peak_label = max(weeks, key=lambda c: c[1])[0]
             return f"Publishing has slowed since its {peak_label} peak"
     per_week = total / len(vals)
     return (
@@ -364,15 +404,15 @@ def momentum_title(counts: list[tuple[str, int]]) -> str:
 
 def matrix_action_title(columns: list[str], rows: list[dict]) -> str:
     """Action title for the firm x theme exhibit, derived purely from the matrix."""
-    total = sum(r["total"] for r in rows)
-    if not total or not columns:
+    mentions = sum(sum(r["counts"]) for r in rows)
+    if not mentions or not columns:
         return "No competitor publishing in the window"
     col_totals = [
         (c, sum(r["counts"][i] for r in rows)) for i, c in enumerate(columns)
     ]
     top_col, top_n = max(col_totals, key=lambda x: x[1])
     return (
-        f"{tag_label(top_col)} draws {top_n} of {total} theme mentions "
+        f"{tag_label(top_col)} draws {top_n} of {mentions} theme mentions "
         f"across {len(rows)} firms"
     )
 
@@ -463,7 +503,7 @@ def render_matrix(columns: list[str], rows: list[dict]) -> str:
 
 
 def render_weekly(counts: list[tuple[str, int]]) -> str:
-    """Compact bar strip: new signals per calendar week."""
+    """Compact bar strip: signals per calendar week of publication."""
     if not counts or not any(n for _, n in counts):
         return ""
     peak = max(n for _, n in counts)
@@ -471,7 +511,10 @@ def render_weekly(counts: list[tuple[str, int]]) -> str:
     for i, (label, n) in enumerate(counts):
         h = max(3, round(n / peak * 56)) if n else 3
         cls = "bar" if n else "bar zero"
-        tip = f"{label} — {n} new signal{'s' if n != 1 else ''}"
+        if label.startswith("≤"):
+            tip = f"Published before the window's weeks — {n} signal{'s' if n != 1 else ''}"
+        else:
+            tip = f"{label} — {n} signal{'s' if n != 1 else ''} published"
         # Direct-label peak weeks and the current week only.
         show_n = n and (n == peak or i == len(counts) - 1)
         val = f'<div class="wk-n">{n}</div>' if show_n else ""
@@ -481,7 +524,7 @@ def render_weekly(counts: list[tuple[str, int]]) -> str:
             f'<div class="wk-l">{escape(label.replace("CW ", ""))}</div></div>'
         )
     return (
-        '<div class="spark" role="img" aria-label="New signals per calendar week">'
+        '<div class="spark" role="img" aria-label="Signals per calendar week of publication">'
         + "".join(bars)
         + '</div><div class="spark-axis">Calendar week</div>'
     )
@@ -502,12 +545,15 @@ def render_exhibit2(counts: list[tuple[str, int]]) -> str:
     strip = render_weekly(counts)
     if not strip:
         return ""
+    note = "Signals by calendar week of publication; hover a bar for the count."
+    if counts and counts[0][0].startswith("≤"):
+        note += " The ≤ bar collects items published before the window's weeks."
     return (
         '<div class="exhibit">'
         '<div class="exhibit-kicker">Exhibit 2 · Signal flow</div>'
         f'<div class="exhibit-title">{escape(momentum_title(counts))}</div>'
         f'{strip}'
-        '<div class="exhibit-note">New signals per calendar week; hover a bar for the count.</div>'
+        f'<div class="exhibit-note">{note}</div>'
         "</div>"
     )
 
@@ -986,7 +1032,7 @@ HTML_TEMPLATE = r"""<!doctype html>
     <div class="matrix-scroll">
       __MATRIX__
     </div>
-    <div class="exhibit-note">n = __N_SIGNALS__ signals; a signal may carry several themes. Darker cells = more signals. Click a firm, theme, or cell to filter the register below.__MATRIX_NOTE_EXTRA__</div>
+    <div class="exhibit-note">n = __N_SIGNALS__ signals. Cells count theme mentions — a signal may carry several themes — while Total counts each signal once. Darker cells = more signals. Click a firm, theme, or cell to filter the register below.__MATRIX_NOTE_EXTRA__</div>
   </div>
 
   __EXHIBIT2__
@@ -1006,7 +1052,7 @@ HTML_TEMPLATE = r"""<!doctype html>
   <div class="foot">
     __FOOTER_IDENTITY__
     <div class="foot-method">
-      Public sources via Google Alerts RSS · relevance scored and summarised by Claude ·
+      Public sources via Google News &amp; Google Alerts RSS · relevance scored and summarised by Claude ·
       summaries are AI-generated — verify against the source before use.
     </div>
   </div>

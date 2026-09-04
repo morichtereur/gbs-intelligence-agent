@@ -70,7 +70,7 @@ A standalone consulting-style HTML dashboard focused on the consultancies — no
 
 - **Answer-first headline** derived from the week's data (top theme, most active firm)
 - **Firm × theme matrix** showing where competitors publish, grouped by cluster (**MBB · Big4 · Accenture**), with firm logos
-- **Themes follow the CFO agenda**: Finance strategy · GBS · GCC · Controlling & FP&A, with agentic AI as the cross-cutting layer
+- **Themes follow the CFO agenda**: Finance strategy · Operating model · GBS · GCC · Process excellence · Controlling & FP&A, with agentic AI as the cross-cutting layer
 - **Signal list in two groups**, each ranked by relevance: **Market moves** (offerings, alliances, M&A — may demand a competitive response) and **Research & viewpoints** (surveys and thought leadership — to read, cite, and benchmark against); classification comes from the scoring model
 - Each title links straight to the source, with the firm logo, AI summary, and source domain
 - Theme filter and full-text search, keyboard shortcuts (`/` search · `Esc` reset), print-friendly, provenance note in the footer

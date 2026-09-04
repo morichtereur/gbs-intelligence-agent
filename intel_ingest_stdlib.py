@@ -318,13 +318,26 @@ def _kw_match(text: str, kw: str) -> bool:
     return bool(pat.search(text))
 
 
-def infer_tags(text: str, tag_rules: dict[str, list[str]]) -> list[str]:
+def infer_tags(text: str, tag_rules: dict) -> list[str]:
+    """A rule is either a keyword list, or an object with "any" keywords and
+    optional "exclude" terms that veto the tag (e.g. GCC-the-capability-center
+    vs GCC-the-Gulf-region: an article mentioning "gcc" alongside "tax" or
+    "Bahrain" is not a capability-center signal)."""
     t = (text or "").lower()
     found: list[str] = []
-    for tag, keywords in tag_rules.items():
-        if tag.startswith("_") or not isinstance(keywords, list):
+    for tag, rule in tag_rules.items():
+        if tag.startswith("_"):
+            continue
+        if isinstance(rule, dict):
+            keywords = rule.get("any", [])
+            excludes = rule.get("exclude", [])
+        elif isinstance(rule, list):
+            keywords, excludes = rule, []
+        else:
             continue
         if ALLOWED_TAGS and tag not in ALLOWED_TAGS:
+            continue
+        if any(_kw_match(t, kw) for kw in excludes):
             continue
         for kw in keywords:
             if _kw_match(t, kw):
