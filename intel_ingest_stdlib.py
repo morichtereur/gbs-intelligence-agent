@@ -133,6 +133,77 @@ def normalize_url(url: str) -> str:
     return u.strip()
 
 
+# ---------- Google News redirect resolution ----------
+# news.google.com/rss/search feeds link every item through an opaque
+# /rss/articles/<token> redirect that cannot be decoded offline. The
+# publisher URL is recovered with two requests: the article stub carries a
+# signature that the batchexecute endpoint exchanges for the target URL.
+# Successful resolutions are cached in the database, so each token costs the
+# two requests at most once; on failure the redirect URL is kept — it still
+# reaches the article — and resolution is retried on the next run.
+
+GN_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
+
+
+def google_news_token(url: str) -> str:
+    try:
+        p = urlparse(url)
+        if not p.netloc.lower().endswith("news.google.com"):
+            return ""
+        m = re.match(r"^/rss/articles/([^/?#]+)", p.path)
+        return m.group(1) if m else ""
+    except Exception:
+        return ""
+
+
+def ensure_gn_cache(cur: sqlite3.Cursor) -> None:
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS gn_url_cache (
+            token TEXT PRIMARY KEY,
+            resolved TEXT,
+            created_at TEXT
+        )
+        """
+    )
+
+
+def resolve_google_news_url(url: str, token: str) -> str:
+    # urllib on purpose: the requests fingerprint gets served Google's
+    # cookie-consent interstitial instead of the article stub.
+    import urllib.request
+    from urllib.parse import urlencode as _urlencode
+    try:
+        req = urllib.request.Request(url, headers=GN_HEADERS)
+        stub = urllib.request.urlopen(req, timeout=HTTP_TIMEOUT).read().decode("utf-8", "ignore")
+        sg = re.search(r'data-n-a-sg="([^"]+)"', stub)
+        ts = re.search(r'data-n-a-ts="([^"]+)"', stub)
+        if not (sg and ts):
+            return ""
+        inner = json.dumps([
+            "garturlreq",
+            [["X", "X", ["X", "X"], None, None, 1, 1, "US:en", None, 1,
+              None, None, None, None, None, 0, 1],
+             "X", "X", 1, [1, 1, 1], 1, 1, None, 0, 0, None, 0],
+            token, int(ts.group(1)), sg.group(1),
+        ])
+        data = _urlencode({"f.req": json.dumps([[["Fbv4je", inner, None, "generic"]]])}).encode()
+        req2 = urllib.request.Request(
+            "https://news.google.com/_/DotsSplashUi/data/batchexecute",
+            data=data,
+            headers={**GN_HEADERS,
+                     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+        )
+        body = urllib.request.urlopen(req2, timeout=HTTP_TIMEOUT).read().decode("utf-8", "ignore")
+        m = re.search(r'https?://[^"\\]+', body.split("Fbv4je")[-1])
+        out = m.group(0) if m else ""
+        if not out or urlparse(out).netloc.lower().endswith("news.google.com"):
+            return ""
+        return out
+    except Exception:
+        return ""
+
+
 def sha1(s: str) -> str:
     return hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()
 
@@ -379,6 +450,20 @@ def _has_column(con: sqlite3.Connection, table: str, col: str) -> bool:
         return False
 
 
+def _seen_title(cur: sqlite3.Cursor, title_normed: str) -> bool:
+    if not title_normed:
+        return False
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        cur.execute(
+            "SELECT 1 FROM articles WHERE title_norm = ? AND created_at >= ? LIMIT 1",
+            (title_normed, cutoff),
+        )
+        return cur.fetchone() is not None
+    except Exception:
+        return False
+
+
 def upsert_article(
     con: sqlite3.Connection,
     source: str,
@@ -388,6 +473,7 @@ def upsert_article(
     snippet: str,
     tags: list[str],
     feed_type: str = "competitor",
+    blocked_domains: list[str] | None = None,
 ) -> bool:
     cur = con.cursor()
 
@@ -399,6 +485,38 @@ def upsert_article(
 
     if REQUIRE_TAG_MATCH and not tags:
         return False
+
+    token = google_news_token(clean_url)
+    if token:
+        ensure_gn_cache(cur)
+        cached = cur.execute(
+            "SELECT resolved FROM gn_url_cache WHERE token = ?", (token,)
+        ).fetchone()
+        if cached is not None:
+            resolved = cached[0] or ""
+        else:
+            # The same story lingers in the feed for weeks; collapse by
+            # headline before spending two requests on resolution.
+            if _seen_title(cur, norm_title(title)):
+                return False
+            resolved = resolve_google_news_url(raw_url, token)
+            # Only successes are cached; a failed resolution is retried on
+            # the next run for as long as the item stays in the feed.
+            if resolved:
+                cur.execute(
+                    "INSERT OR REPLACE INTO gn_url_cache(token, resolved, created_at) VALUES (?, ?, ?)",
+                    (token, resolved, now_utc_iso()),
+                )
+                con.commit()
+        if resolved:
+            raw_url = resolved
+            clean_url = normalize_url(resolved)
+            # Re-check the noise filters against the real publisher URL —
+            # the feed-level checks only ever saw the redirect.
+            if is_excluded(title, clean_url):
+                return False
+            if blocked_domains and is_blocked_domain(clean_url, blocked_domains):
+                return False
 
     article_id = sha1(f"{source}|{clean_url}|{published_at}|{title}")
     created_at = now_utc_iso()
@@ -425,17 +543,8 @@ def upsert_article(
     # Near-duplicate collapse: the same story syndicated by several outlets
     # arrives under different URLs but (nearly) the same headline.
     title_normed = norm_title(title)
-    if title_normed:
-        try:
-            cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-            cur.execute(
-                "SELECT 1 FROM articles WHERE title_norm = ? AND created_at >= ? LIMIT 1",
-                (title_normed, cutoff),
-            )
-            if cur.fetchone() is not None:
-                return False
-        except Exception:
-            pass
+    if _seen_title(cur, title_normed):
+        return False
 
     cur.execute(
         """
@@ -513,7 +622,8 @@ def main() -> int:
                         skipped_notag += 1
                         continue
 
-                    if upsert_article(con, feed.source, title, link, published, snippet, tags, feed_type):
+                    if upsert_article(con, feed.source, title, link, published, snippet, tags, feed_type,
+                                      blocked_domains=blocked_domains):
                         new_count += 1
 
             except Exception as ex:
